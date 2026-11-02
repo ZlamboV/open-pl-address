@@ -1,0 +1,48 @@
+{
+  "name": "open-pl-address-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server for instant Polish address search, validation, and Urząd Skarbowy detection",
+  "main": "./dist/index.js",
+  "bin": {
+    "open-pl-address-mcp": "./dist/index.js"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node --experimental-strip-types src/index.ts",
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cursor",
+    "claude",
+    "copilot",
+    "antigravity",
+    "polish-address",
+    "teryt",
+    "prg",
+    "urzad-skarbowy",
+    "pit-11",
+    "zus-platnik"
+  ],
+  "author": "open-pl-address contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pl-address/open-pl-address.git",
+    "directory": "packages/mcp-server"
+  },
+  "dependencies": {
+    "open-pl-address": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
