@@ -77,6 +77,21 @@ export interface RawAddressInput {
   allowManualBuilding?: boolean;
 }
 
+export interface TaxOffice {
+  usCode: string; // 4-digit MF code, e.g. "0610"
+  name: string; // Official name, e.g. "Pierwszy Urząd Skarbowy w Lublinie"
+  city: string | null;
+  street: string | null;
+  postalCode: string | null;
+}
+
+export interface ResolveTaxOfficeParams {
+  terytCode: string; // 7-digit TERC code, e.g. "0663011"
+  simcId?: string | null; // 7-digit SIMC identifier
+  ulicId?: string | null; // 5-digit ULIC identifier
+  buildingNumber?: string | null; // e.g. "12", "12A", "15/17"
+}
+
 export interface NormalizedAddress {
   wojewodztwo: string;
   powiat: string;
@@ -91,6 +106,7 @@ export interface NormalizedAddress {
   nrLokalu: string | null;
   kodPocztowy: string; // Format XX-XXX
   poczta: string; // Post office town name
+  taxOffice?: TaxOffice | null; // Resolved Urząd Skarbowy for PIT-11 / Gratyfikant
 }
 
 export interface ValidationResult {
@@ -99,6 +115,7 @@ export interface ValidationResult {
   warnings?: string[];
   suggestions: string[];
   normalized: NormalizedAddress | null;
+  taxOffice?: TaxOffice | null; // Resolved Urząd Skarbowy
 }
 
 export interface PostalCodeSearchResult {
@@ -133,5 +150,7 @@ export interface DatabaseManifest {
     cities: number;
     streets: number;
     postalCodes: number;
+    taxOffices?: number;
+    taxOfficeRules?: number;
   };
 }

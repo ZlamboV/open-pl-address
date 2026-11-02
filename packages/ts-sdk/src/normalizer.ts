@@ -235,3 +235,24 @@ export function normalizeBuildingNumber(input?: string | null): string {
 
   return cleaned.replace(/\s+/g, '');
 }
+
+/**
+ * Extracts integer numeric part from building number for parity and range evaluation.
+ * Examples:
+ *   "12" -> 12
+ *   "12A" -> 12
+ *   "15/17" -> 15
+ *   "84/92" -> 84
+ *   "4A" -> 4
+ */
+export function extractBuildingNumericPart(input?: string | null): number | null {
+  if (!input) return null;
+  const normalized = normalizeBuildingNumber(input);
+  if (!normalized) return null;
+
+  const match = normalized.match(/^(\d+)/);
+  if (!match) return null;
+
+  const val = parseInt(match[1], 10);
+  return Number.isNaN(val) ? null : val;
+}
