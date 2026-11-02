@@ -69,6 +69,13 @@ export const SEED_TERC: SeedTerc[] = [
     gmina: 'Wrocław',
     rodzajGminy: 'gmina miejska',
   },
+  {
+    terytCode: '3064011',
+    wojewodztwo: 'WIELKOPOLSKIE',
+    powiat: 'm. Poznań',
+    gmina: 'Poznań',
+    rodzajGminy: 'gmina miejska',
+  },
 ];
 
 export const SEED_CITIES: SeedCity[] = [
@@ -76,7 +83,7 @@ export const SEED_CITIES: SeedCity[] = [
     simcId: '0954995',
     terytCode: '0663011',
     name: 'Lublin',
-    postalCodes: ['20-001', '20-002', '20-020', '20-024', '20-029', '20-059', '20-071', '20-074', '20-076', '20-080', '20-601', '20-711'],
+    postalCodes: ['20-001', '20-002', '20-020', '20-024', '20-029', '20-059', '20-071', '20-074', '20-076', '20-080', '20-601', '20-711', '20-830'],
   },
   {
     simcId: '0379114',
@@ -100,13 +107,19 @@ export const SEED_CITIES: SeedCity[] = [
     simcId: '0957650',
     terytCode: '1061011',
     name: 'Łódź',
-    postalCodes: ['90-001', '90-006', '90-418', '91-604'],
+    postalCodes: ['90-001', '90-006', '90-418', '91-604', '94-279'],
   },
   {
     simcId: '0986283',
     terytCode: '0264011',
     name: 'Wrocław',
     postalCodes: ['50-001', '50-101'],
+  },
+  {
+    simcId: '0969400',
+    terytCode: '3064011',
+    name: 'Poznań',
+    postalCodes: ['60-001', '61-055'],
   },
 ];
 
@@ -185,6 +198,15 @@ export const SEED_STREETS: SeedStreet[] = [
     name: 'Kasztelańska',
     buildingsMap: {
       '20-711': ['1', '5', '10', '25', '29', '31'],
+    },
+  },
+  {
+    simcId: '0954995',
+    ulicId: '16967',
+    cecha: 'ul.',
+    name: 'Polan',
+    buildingsMap: {
+      '20-830': ['1', '10', '20', '30', '44', '50'],
     },
   },
 
@@ -278,6 +300,26 @@ export const SEED_STREETS: SeedStreet[] = [
       '91-604': ['1', '2', '3', '4', '5'],
     },
   },
+  {
+    simcId: '0957650',
+    ulicId: '04151',
+    cecha: 'ul.',
+    name: 'Dożynkowa',
+    buildingsMap: {
+      '94-279': ['1', '2', '3', '4', '5'],
+    },
+  },
+
+  // --- POZNAŃ ---
+  {
+    simcId: '0969400',
+    ulicId: '01856',
+    cecha: 'ul.',
+    name: 'Borowikowa',
+    buildingsMap: {
+      '61-055': ['1', '2', '3', '5', '10'],
+    },
+  },
 ];
 
 export interface SeedTaxOffice {
@@ -352,6 +394,13 @@ export const SEED_TAX_OFFICES: SeedTaxOffice[] = [
     postalCode: '91-066',
   },
   {
+    usCode: '1012',
+    name: 'Urząd Skarbowy Łódź-Polesie',
+    city: 'Łódź',
+    street: 'ul. 6 Sierpnia 86A',
+    postalCode: '90-646',
+  },
+  {
     usCode: '1013',
     name: 'Urząd Skarbowy Łódź-Śródmieście',
     city: 'Łódź',
@@ -366,6 +415,15 @@ export const SEED_TAX_OFFICES: SeedTaxOffice[] = [
     city: 'Wrocław',
     street: 'ul. Piłsudskiego 27/29',
     postalCode: '50-044',
+  },
+
+  // --- POZNAŃ ---
+  {
+    usCode: '3022',
+    name: 'Urząd Skarbowy Poznań-Nowe Miasto',
+    city: 'Poznań',
+    street: 'ul. Dezyderego Chłapowskiego 17/18',
+    postalCode: '61-065',
   },
 ];
 
@@ -460,6 +518,16 @@ export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
     buildingTo: null,
     priority: 2,
   },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '16967', // ul. Polan (Szerokie)
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
 
   // Southern and western streets -> Trzeci US w Lublinie (0612)
   {
@@ -547,6 +615,16 @@ export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
     priority: 2,
   },
   {
+    usCode: '1012', // Łódź-Polesie (ul. Dożynkowa)
+    terytCode: '1061011',
+    simcId: '0957650',
+    ulicId: '04151',
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
     usCode: '1013', // Łódź-Śródmieście (city default)
     terytCode: '1061011',
     simcId: '0957650',
@@ -560,6 +638,26 @@ export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
     usCode: '0227', // Wrocław-Stare Miasto
     terytCode: '0264011',
     simcId: '0986283',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+  {
+    usCode: '3022', // Poznań-Nowe Miasto (ul. Borowikowa)
+    terytCode: '3064011',
+    simcId: '0969400',
+    ulicId: '01856',
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '3022', // Poznań (city default)
+    terytCode: '3064011',
+    simcId: '0969400',
     ulicId: null,
     buildingParity: 'ALL',
     buildingFrom: null,
