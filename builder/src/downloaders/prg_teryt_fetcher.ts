@@ -14,8 +14,8 @@ export const OFFICIAL_DATA_SOURCES: Record<string, DownloadSource> = {
   GUGIK_PRG_ADRESY: {
     id: 'prg_adresy',
     name: 'GUGiK Państwowy Rejestr Granic - Punkty Adresowe (Cała Polska)',
-    url: 'https://opendata.geoportal.gov.pl/prg/adresy/PRG_PunktyAdresowe.zip',
-    targetFilename: 'PRG_PunktyAdresowe.zip',
+    url: 'https://opendata.geoportal.gov.pl/prg/adresy/PRG-punkty_adresowe.zip',
+    targetFilename: 'PRG-punkty_adresowe.zip',
   },
   GUGIK_PRG_ADRESY_LUBLIN: {
     id: 'prg_adresy_06',

@@ -46,7 +46,7 @@ export interface AggregatedTercEntry {
 export async function parsePrgCsvStream(
   filePath: string,
   onBatch: (streets: AggregatedStreetEntry[], cities: AggregatedCityEntry[], tercs: AggregatedTercEntry[]) => Promise<void>,
-  batchSize: number = 50000
+  batchSize: number = 0
 ): Promise<{ totalRows: number; totalStreets: number }> {
   if (!fs.existsSync(filePath)) {
     throw new Error(`PRG CSV file not found: ${filePath}`);
@@ -182,8 +182,8 @@ export async function parsePrgCsvStream(
       bSet.add(buildingNumber);
     }
 
-    // Flush batch if reached
-    if (streetMap.size >= batchSize) {
+    // Flush batch if reached (when batchSize > 0)
+    if (batchSize > 0 && streetMap.size >= batchSize) {
       const streetBatch: AggregatedStreetEntry[] = [];
       for (const s of streetMap.values()) {
         const buildingsMap: Record<string, string[]> = {};

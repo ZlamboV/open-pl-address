@@ -138,6 +138,208 @@ export class AddressDatabaseBuilder {
     return manifest;
   }
 
+  public async buildFullDatabase(
+    csvFiles: string[],
+    version: string = '1.0.0-full'
+  ): Promise<DatabaseManifest> {
+    const dir = path.dirname(this.outputPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    if (fs.existsSync(this.outputPath)) {
+      fs.unlinkSync(this.outputPath);
+    }
+
+    console.log(`[Builder] Initializing Full SQLite database at: ${this.outputPath}`);
+    this.db = new DatabaseSync(this.outputPath);
+
+    // Set performance pragmas for massive bulk inserts
+    this.db.exec('PRAGMA synchronous = OFF;');
+    this.db.exec('PRAGMA journal_mode = MEMORY;');
+    this.db.exec('PRAGMA cache_size = -64000;');
+    this.db.exec('PRAGMA foreign_keys = OFF;');
+
+    // Apply schema
+    const schemaSql = fs.readFileSync(this.schemaPath, 'utf-8');
+    this.db.exec(schemaSql);
+
+    // 1. Populate Tax Offices & Tax Office Rules
+    console.log('[Builder] Populating official Tax Offices & rules...');
+    this.populateTaxOfficesAndRules();
+
+    // 2. Stream PRG CSV files
+    let totalStreets = 0;
+    let totalCities = 0;
+    let totalTerc = 0;
+    const allPostalCodes = new Set<string>();
+
+    const stmtTerc = this.db.prepare(`
+      INSERT OR IGNORE INTO terc (teryt_code, wojewodztwo, powiat, gmina, rodzaj_gminy)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    const stmtCity = this.db.prepare(`
+      INSERT OR REPLACE INTO cities (simc_id, teryt_code, name, name_normalized, postal_codes)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    const stmtCityFts = this.db.prepare(`
+      INSERT INTO cities_fts (simc_id, name_normalized, name)
+      VALUES (?, ?, ?)
+    `);
+    const stmtStreet = this.db.prepare(`
+      INSERT INTO streets (simc_id, ulic_id, cecha, name, name_normalized, buildings_map)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const stmtStreetFts = this.db.prepare(`
+      INSERT INTO streets_fts (street_id, simc_id, name_normalized, name)
+      VALUES (?, ?, ?, ?)
+    `);
+    const stmtPostal = this.db.prepare(`
+      INSERT OR IGNORE INTO postal_code_index (postal_code, simc_id, street_id)
+      VALUES (?, ?, ?)
+    `);
+
+    const { parsePrgCsvStream } = await import('./parsers/prg_stream.ts');
+
+    for (const csvFile of csvFiles) {
+      console.log(`[Builder] Processing PRG CSV file: ${csvFile}`);
+      await parsePrgCsvStream(
+        csvFile,
+        async (streets, cities, tercs) => {
+          this.db!.exec('BEGIN TRANSACTION;');
+          try {
+            for (const t of tercs) {
+              stmtTerc.run(t.terytCode, t.wojewodztwo, t.powiat, t.gmina, t.rodzajGminy);
+              totalTerc++;
+            }
+            for (const c of cities) {
+              const norm = normalizeText(c.name);
+              const pCodes = Array.from(c.postalCodes);
+              stmtCity.run(c.simcId, c.terytCode, c.name, norm, JSON.stringify(pCodes));
+              stmtCityFts.run(c.simcId, norm, c.name);
+              for (const code of pCodes) {
+                stmtPostal.run(code, c.simcId, null);
+                allPostalCodes.add(code);
+              }
+              totalCities++;
+            }
+            for (const s of streets) {
+              const norm = normalizeText(s.name);
+              const info = stmtStreet.run(
+                s.simcId,
+                s.ulicId,
+                s.cecha,
+                s.name,
+                norm,
+                JSON.stringify(s.buildingsMap)
+              );
+              const streetId = Number(info.lastInsertRowid);
+              stmtStreetFts.run(streetId, s.simcId, norm, s.name);
+              for (const code of Object.keys(s.buildingsMap)) {
+                stmtPostal.run(code, s.simcId, streetId);
+                allPostalCodes.add(code);
+              }
+              totalStreets++;
+            }
+            this.db!.exec('COMMIT;');
+          } catch (err) {
+            this.db!.exec('ROLLBACK;');
+            throw err;
+          }
+        },
+        0 // 0 means aggregate each CSV file completely to prevent duplicate street rows
+      );
+    }
+
+    // Set metadata
+    const stmtMeta = this.db.prepare('INSERT INTO db_metadata (key, value) VALUES (?, ?)');
+    stmtMeta.run('version', version);
+    stmtMeta.run('built_at', new Date().toISOString());
+    stmtMeta.run('dataset', 'FULL_PRG_TERYT_MF');
+
+    console.log('[Builder] Rebuilding full-text indices and running VACUUM & PRAGMA optimize...');
+    this.db.exec('PRAGMA foreign_keys = ON;');
+    this.db.exec('PRAGMA optimize;');
+    this.db.exec('VACUUM;');
+    this.db.close();
+    this.db = null;
+
+    console.log('[Builder] Full database compiled successfully.');
+
+    // Compression and manifest generation
+    const compressedPath = `${this.outputPath}.gz`;
+    console.log(`[Builder] Compressing to ${compressedPath}...`);
+    await gzipFile(this.outputPath, compressedPath);
+
+    const sha256 = await calculateSha256(this.outputPath);
+    const sha256Compressed = await calculateSha256(compressedPath);
+
+    const uncompressedStat = fs.statSync(this.outputPath);
+    const compressedStat = fs.statSync(compressedPath);
+
+    const manifest: DatabaseManifest = {
+      version,
+      builtAt: new Date().toISOString(),
+      databaseFile: path.basename(this.outputPath),
+      compressedFile: path.basename(compressedPath),
+      sha256,
+      sha256Compressed,
+      uncompressedSizeBytes: uncompressedStat.size,
+      compressedSizeBytes: compressedStat.size,
+      counts: {
+        terc: totalTerc,
+        cities: totalCities,
+        streets: totalStreets,
+        postalCodes: allPostalCodes.size,
+        taxOffices: SEED_TAX_OFFICES.length,
+        taxOfficeRules: SEED_TAX_OFFICE_RULES.length,
+      },
+    };
+
+    const manifestPath = path.join(dir, 'manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+    console.log(`[Builder] Manifest written to ${manifestPath}`);
+
+    return manifest;
+  }
+
+  private populateTaxOfficesAndRules(): void {
+    if (!this.db) throw new Error('Database not initialized');
+    this.db.exec('BEGIN TRANSACTION;');
+    try {
+      const stmtTaxOffice = this.db.prepare(`
+        INSERT INTO tax_offices (us_code, name, city, street, postal_code)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      for (const to of SEED_TAX_OFFICES) {
+        stmtTaxOffice.run(to.usCode, to.name, to.city, to.street, to.postalCode);
+      }
+      const stmtTaxRule = this.db.prepare(`
+        INSERT INTO tax_office_rules (
+          us_code, teryt_code, simc_id, ulic_id,
+          building_parity, building_from, building_to, priority
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const r of SEED_TAX_OFFICE_RULES) {
+        stmtTaxRule.run(
+          r.usCode,
+          r.terytCode,
+          r.simcId,
+          r.ulicId,
+          r.buildingParity,
+          r.buildingFrom,
+          r.buildingTo,
+          r.priority
+        );
+      }
+      this.db.exec('COMMIT;');
+    } catch (err) {
+      this.db.exec('ROLLBACK;');
+      throw err;
+    }
+  }
+
   private countPostalCodes(): number {
     const allCodes = new Set<string>();
     for (const c of SEED_CITIES) {

@@ -80,13 +80,40 @@ async function main() {
     }
 
     // In full mode with unpacked PRG CSV:
-    const csvPath = path.join(cacheDir, 'PRG_PunktyAdresowe.csv');
-    if (fs.existsSync(csvPath)) {
-      console.log('[Full Pipeline] Parsing full PRG address points CSV into SQLite...');
-      // Initialize DB and stream CSV batches
-      // builder handles streaming insert
+    console.log('[Full Pipeline] Extracting archive...');
+    try {
+      const { execSync } = await import('node:child_process');
+      execSync(`unzip -q -o "${prgZipPath}" -d "${cacheDir}"`, { stdio: 'inherit' });
+    } catch (unzipErr: any) {
+      console.warn(`[Warning] unzip command failed (${unzipErr.message}).`);
+    }
+
+    function findCsvFiles(dir: string): string[] {
+      const results: string[] = [];
+      if (!fs.existsSync(dir)) return results;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...findCsvFiles(full));
+        } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.csv')) {
+          results.push(full);
+        }
+      }
+      return results;
+    }
+
+    const csvFiles = findCsvFiles(cacheDir);
+    if (csvFiles.length > 0) {
+      console.log(`[Full Pipeline] Found ${csvFiles.length} CSV file(s) to process:`, csvFiles.map((f) => path.basename(f)));
+      const manifest = await builder.buildFullDatabase(csvFiles, version);
+      console.log('\n--- Full Build Complete ---');
+      console.log(`Version:    ${manifest.version}`);
+      console.log(`Size (raw): ${(manifest.uncompressedSizeBytes / 1024 / 1024).toFixed(1)} MB`);
+      console.log(`Size (gz):  ${(manifest.compressedSizeBytes / 1024 / 1024).toFixed(1)} MB`);
+      console.log(`Records:    TERC=${manifest.counts.terc}, Cities=${manifest.counts.cities}, Streets=${manifest.counts.streets}, PostalCodes=${manifest.counts.postalCodes}`);
     } else {
-      console.log('PRG CSV extracted file not present, using seed data fallback.');
+      console.log('No PRG CSV files found in cache, using seed data fallback.');
       await builder.buildSeedDatabase(version);
     }
   }
