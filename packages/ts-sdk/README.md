@@ -66,7 +66,7 @@ console.log(bld);
 //   availableNumbers: ['2', '4', '6', '8', '10', '12', '14']
 // }
 
-// 4. Validate and format for InsERT Gratyfikant nexo / ZUS Płatnik
+// 4. Validate and format for InsERT Gratyfikant nexo / ZUS Płatnik / PIT
 const exportAddress = sdk.validateAndFormatForExport({
   miejscowosc: 'Lublin',
   ulica: 'Wieniawska',
@@ -91,8 +91,38 @@ console.log(exportAddress);
 //     nrDomu: '12',
 //     nrLokalu: '4',
 //     kodPocztowy: '20-029',
-//     poczta: 'Lublin'
+//     poczta: 'Lublin',
+//     taxOffice: {
+//       usCode: '0610',
+//       name: 'Pierwszy Urząd Skarbowy w Lublinie',
+//       city: 'Lublin',
+//       street: 'ul. Sądowa 5',
+//       postalCode: '20-027'
+//     }
+//   },
+//   taxOffice: {
+//     usCode: '0610',
+//     name: 'Pierwszy Urząd Skarbowy w Lublinie',
+//     city: 'Lublin',
+//     street: 'ul. Sądowa 5',
+//     postalCode: '20-027'
 //   }
+// }
+
+// 5. Direct Urząd Skarbowy resolution (< 1 ms by hierarchy)
+const taxOffice = sdk.resolveTaxOffice({
+  terytCode: '0663011',
+  simcId: '0954995',
+  ulicId: '11181', // ul. Lipowa
+  buildingNumber: '3' // Odd -> Pierwszy US (0610), Even -> Trzeci US (0612)
+});
+console.log(taxOffice);
+// {
+//   usCode: '0610',
+//   name: 'Pierwszy Urząd Skarbowy w Lublinie',
+//   city: 'Lublin',
+//   street: 'ul. Sądowa 5',
+//   postalCode: '20-027'
 // }
 ```
 

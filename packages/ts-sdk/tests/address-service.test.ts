@@ -182,3 +182,135 @@ test('AddressService.validateAndFormatForExport - export format for Gratyfikant 
   assert.ok(result4.errors.length > 0);
   assert.ok(result4.suggestions.length > 0);
 });
+
+test('AddressService.resolveTaxOffice - Priority 1, 2, 3, 4 hierarchy and sub-millisecond speed', () => {
+  const lublinTeryt = '0663011';
+  const lublinSimc = '0954995';
+  const ulicLipowa = '11181';
+  const ulicWieniawska = '24123';
+  const ulicZana = '25785';
+  const biskupiceTeryt = '0617012';
+
+  // --- Priority 1: Street + parity/range on ul. Lipowa ---
+  // Odd building (3) -> Pierwszy US (0610)
+  const usLipowaOdd = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+    ulicId: ulicLipowa,
+    buildingNumber: '3',
+  });
+  assert.ok(usLipowaOdd);
+  assert.strictEqual(usLipowaOdd.usCode, '0610');
+  assert.strictEqual(usLipowaOdd.name, 'Pierwszy Urząd Skarbowy w Lublinie');
+
+  // Even building (4) -> Trzeci US (0612)
+  const usLipowaEven = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+    ulicId: ulicLipowa,
+    buildingNumber: '4',
+  });
+  assert.ok(usLipowaEven);
+  assert.strictEqual(usLipowaEven.usCode, '0612');
+  assert.strictEqual(usLipowaEven.name, 'Trzeci Urząd Skarbowy w Lublinie');
+
+  // Alphanumeric even building (12A -> 12) -> Trzeci US (0612)
+  const usLipowaAlpha = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+    ulicId: ulicLipowa,
+    buildingNumber: '12A',
+  });
+  assert.ok(usLipowaAlpha);
+  assert.strictEqual(usLipowaAlpha.usCode, '0612');
+
+  // --- Priority 2: Whole street ---
+  // ul. Wieniawska -> Pierwszy US (0610)
+  const usWieniawska = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+    ulicId: ulicWieniawska,
+    buildingNumber: '12',
+  });
+  assert.ok(usWieniawska);
+  assert.strictEqual(usWieniawska.usCode, '0610');
+
+  // ul. Tomasza Zana -> Trzeci US (0612)
+  const usZana = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+    ulicId: ulicZana,
+    buildingNumber: '32A',
+  });
+  assert.ok(usZana);
+  assert.strictEqual(usZana.usCode, '0612');
+
+  // --- Priority 3: City-level fallback ---
+  const usCityFallback = service.resolveTaxOffice({
+    terytCode: lublinTeryt,
+    simcId: lublinSimc,
+  });
+  assert.ok(usCityFallback);
+  assert.strictEqual(usCityFallback.usCode, '0610');
+
+  // --- Priority 4: Gmina / Powiat outside city (Biskupice) ---
+  const usBiskupice = service.resolveTaxOffice({
+    terytCode: biskupiceTeryt,
+    buildingNumber: '4A',
+  });
+  assert.ok(usBiskupice);
+  assert.strictEqual(usBiskupice.usCode, '0611');
+  assert.strictEqual(usBiskupice.name, 'Drugi Urząd Skarbowy w Lublinie');
+
+  // --- Performance: < 1 ms average ---
+  const iterations = 100;
+  const start = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    service.resolveTaxOffice({
+      terytCode: lublinTeryt,
+      simcId: lublinSimc,
+      ulicId: ulicWieniawska,
+      buildingNumber: '12',
+    });
+  }
+  const end = performance.now();
+  const avgMs = (end - start) / iterations;
+  assert.ok(avgMs < 1.0, `resolveTaxOffice average time should be < 1ms, got ${avgMs.toFixed(4)}ms`);
+});
+
+test('AddressService.validateAndFormatForExport - includes taxOffice for export to Gratyfikant nexo and PIT-11', () => {
+  // Lublin Wieniawska (Pierwszy US - 0610)
+  const res1 = service.validateAndFormatForExport({
+    miejscowosc: 'Lublin',
+    ulica: 'Wieniawska',
+    nrDomu: '12',
+  });
+  assert.strictEqual(res1.isValid, true);
+  assert.ok(res1.taxOffice);
+  assert.strictEqual(res1.taxOffice.usCode, '0610');
+  assert.strictEqual(res1.taxOffice.name, 'Pierwszy Urząd Skarbowy w Lublinie');
+  assert.strictEqual(res1.normalized?.taxOffice?.usCode, '0610');
+
+  // Lublin Tomasza Zana (Trzeci US - 0612)
+  const res2 = service.validateAndFormatForExport({
+    miejscowosc: 'Lublin',
+    ulica: 'Tomasza Zana',
+    nrDomu: '32A',
+  });
+  assert.strictEqual(res2.isValid, true);
+  assert.ok(res2.taxOffice);
+  assert.strictEqual(res2.taxOffice.usCode, '0612');
+  assert.strictEqual(res2.taxOffice.name, 'Trzeci Urząd Skarbowy w Lublinie');
+  assert.strictEqual(res2.normalized?.taxOffice?.usCode, '0612');
+
+  // Biskupice (Drugi US - 0611)
+  const res3 = service.validateAndFormatForExport({
+    miejscowosc: 'Biskupice',
+    nrDomu: '4A',
+  });
+  assert.strictEqual(res3.isValid, true);
+  assert.ok(res3.taxOffice);
+  assert.strictEqual(res3.taxOffice.usCode, '0611');
+  assert.strictEqual(res3.taxOffice.name, 'Drugi Urząd Skarbowy w Lublinie');
+  assert.strictEqual(res3.normalized?.taxOffice?.usCode, '0611');
+});
