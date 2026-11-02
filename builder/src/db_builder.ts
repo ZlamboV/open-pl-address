@@ -5,7 +5,13 @@ import * as crypto from 'node:crypto';
 import * as zlib from 'node:zlib';
 import { pipeline } from 'node:stream/promises';
 import { normalizeText } from './normalizer.ts';
-import { SEED_TERC, SEED_CITIES, SEED_STREETS } from './seed_data.ts';
+import {
+  SEED_TERC,
+  SEED_CITIES,
+  SEED_STREETS,
+  SEED_TAX_OFFICES,
+  SEED_TAX_OFFICE_RULES,
+} from './seed_data.ts';
 
 export interface DatabaseManifest {
   version: string;
@@ -21,6 +27,8 @@ export interface DatabaseManifest {
     cities: number;
     streets: number;
     postalCodes: number;
+    taxOffices: number;
+    taxOfficeRules: number;
   };
 }
 
@@ -118,6 +126,8 @@ export class AddressDatabaseBuilder {
         cities: SEED_CITIES.length,
         streets: SEED_STREETS.length,
         postalCodes: this.countPostalCodes(),
+        taxOffices: SEED_TAX_OFFICES.length,
+        taxOfficeRules: SEED_TAX_OFFICE_RULES.length,
       },
     };
 
@@ -207,11 +217,41 @@ export class AddressDatabaseBuilder {
         }
       }
 
-      // 5. Metadata
+      // 5. Tax Offices (Urzędy Skarbowe)
+      const stmtTaxOffice = this.db.prepare(`
+        INSERT INTO tax_offices (us_code, name, city, street, postal_code)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      for (const to of SEED_TAX_OFFICES) {
+        stmtTaxOffice.run(to.usCode, to.name, to.city, to.street, to.postalCode);
+      }
+
+      // 6. Tax Office Rules
+      const stmtTaxRule = this.db.prepare(`
+        INSERT INTO tax_office_rules (
+          us_code, teryt_code, simc_id, ulic_id,
+          building_parity, building_from, building_to, priority
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const r of SEED_TAX_OFFICE_RULES) {
+        stmtTaxRule.run(
+          r.usCode,
+          r.terytCode,
+          r.simcId,
+          r.ulicId,
+          r.buildingParity,
+          r.buildingFrom,
+          r.buildingTo,
+          r.priority
+        );
+      }
+
+      // 7. Metadata
       const stmtMeta = this.db.prepare('INSERT INTO db_metadata (key, value) VALUES (?, ?)');
       stmtMeta.run('version', version);
       stmtMeta.run('built_at', new Date().toISOString());
-      stmtMeta.run('dataset', 'TERYT+PRG');
+      stmtMeta.run('dataset', 'TERYT+PRG+MF_US');
 
       this.db.exec('COMMIT;');
     } catch (err) {

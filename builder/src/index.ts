@@ -53,7 +53,7 @@ async function main() {
     console.log(`SHA256:     ${manifest.sha256}`);
     console.log(`Size (raw): ${(manifest.uncompressedSizeBytes / 1024).toFixed(1)} KB`);
     console.log(`Size (gz):  ${(manifest.compressedSizeBytes / 1024).toFixed(1)} KB`);
-    console.log(`Records:    TERC=${manifest.counts.terc}, Cities=${manifest.counts.cities}, Streets=${manifest.counts.streets}, PostalCodes=${manifest.counts.postalCodes}`);
+    console.log(`Records:    TERC=${manifest.counts.terc}, Cities=${manifest.counts.cities}, Streets=${manifest.counts.streets}, PostalCodes=${manifest.counts.postalCodes}, TaxOffices=${manifest.counts.taxOffices}, TaxRules=${manifest.counts.taxOfficeRules}`);
     return;
   }
 
