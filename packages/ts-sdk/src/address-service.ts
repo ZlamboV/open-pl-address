@@ -5,10 +5,13 @@ import type {
   NormalizedAddress,
   PostalCodeSearchResult,
   RawAddressInput,
+  ResolveTaxOfficeParams,
   StreetSearchResult,
+  TaxOffice,
   ValidationResult,
 } from './types.ts';
 import {
+  extractBuildingNumericPart,
   isValidPostalCode,
   normalizeBuildingNumber,
   normalizePostalCode,
@@ -296,7 +299,114 @@ export class AddressService {
   }
 
   /**
-   * 5. Validates and normalizes raw address input for Gratyfikant nexo and ZUS Płatnik.
+   * 5. Resolves official Urząd Skarbowy (Tax Office) in < 1 ms by hierarchy of specificity:
+   *   Priority 1: Street + building range / parity (EVEN, ODD)
+   *   Priority 2: Whole street (ULIC)
+   *   Priority 3: City (SIMC)
+   *   Priority 4: Gmina / Powiat (TERC)
+   */
+  public resolveTaxOffice(params: ResolveTaxOfficeParams): TaxOffice | null {
+    if (!params || !params.terytCode) {
+      return null;
+    }
+
+    const teryt = params.terytCode.trim();
+    const simc = params.simcId ? params.simcId.trim() : null;
+    const ulic = params.ulicId ? params.ulicId.trim() : null;
+    const bldNum = extractBuildingNumericPart(params.buildingNumber);
+
+    // Efficient indexed query matching candidate rules by hierarchy
+    const rows = this.db.prepare(`
+      SELECT 
+        r.id,
+        r.us_code,
+        r.teryt_code,
+        r.simc_id,
+        r.ulic_id,
+        r.building_parity,
+        r.building_from,
+        r.building_to,
+        r.priority,
+        t.name,
+        t.city,
+        t.street,
+        t.postal_code
+      FROM tax_office_rules r
+      JOIN tax_offices t ON t.us_code = r.us_code
+      WHERE r.teryt_code IN (?, SUBSTR(?, 1, 6), SUBSTR(?, 1, 4))
+        AND (r.simc_id IS NULL OR r.simc_id = ?)
+        AND (r.ulic_id IS NULL OR r.ulic_id = ?)
+      ORDER BY r.priority ASC, r.id ASC
+    `).all(teryt, teryt, teryt, simc, ulic) as any[];
+
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    for (const r of rows) {
+      // Priority 1: street + building parity / range
+      if (r.priority === 1) {
+        if (!r.ulic_id || r.ulic_id !== ulic) continue;
+        if (bldNum === null) continue;
+
+        // Check parity
+        if (r.building_parity === 'EVEN' && bldNum % 2 !== 0) continue;
+        if (r.building_parity === 'ODD' && bldNum % 2 === 0) continue;
+
+        // Check ranges
+        if (r.building_from !== null && bldNum < r.building_from) continue;
+        if (r.building_to !== null && bldNum > r.building_to) continue;
+
+        return {
+          usCode: r.us_code,
+          name: r.name,
+          city: r.city,
+          street: r.street,
+          postalCode: r.postal_code,
+        };
+      }
+
+      // Priority 2: whole street
+      if (r.priority === 2) {
+        if (!r.ulic_id || r.ulic_id !== ulic) continue;
+        return {
+          usCode: r.us_code,
+          name: r.name,
+          city: r.city,
+          street: r.street,
+          postalCode: r.postal_code,
+        };
+      }
+
+      // Priority 3: city
+      if (r.priority === 3) {
+        if (!r.simc_id || r.simc_id !== simc) continue;
+        return {
+          usCode: r.us_code,
+          name: r.name,
+          city: r.city,
+          street: r.street,
+          postalCode: r.postal_code,
+        };
+      }
+
+      // Priority 4: gmina / powiat
+      if (r.priority === 4) {
+        return {
+          usCode: r.us_code,
+          name: r.name,
+          city: r.city,
+          street: r.street,
+          postalCode: r.postal_code,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 6. Validates and normalizes raw address input for Gratyfikant nexo, ZUS Płatnik, and PIT declarations.
    */
   public validateAndFormatForExport(input: RawAddressInput): ValidationResult {
     const errors: string[] = [];
@@ -421,6 +531,16 @@ export class AddressService {
 
     const isValid = errors.length === 0;
 
+    // Resolve Urząd Skarbowy for Gratyfikant nexo and PIT-11
+    const taxOffice = city
+      ? this.resolveTaxOffice({
+          terytCode: city.teryt_code,
+          simcId: city.simc_id,
+          ulicId: street && street.ulic_id ? street.ulic_id : null,
+          buildingNumber: normBuilding,
+        })
+      : null;
+
     const normalizedAddress: NormalizedAddress | null = city
       ? {
           wojewodztwo: city.wojewodztwo,
@@ -436,6 +556,7 @@ export class AddressService {
           nrLokalu: input.nrLokalu ? input.nrLokalu.trim() : null,
           kodPocztowy: finalPostalCode ?? '',
           poczta: city.name,
+          taxOffice,
         }
       : null;
 
@@ -445,6 +566,7 @@ export class AddressService {
       warnings,
       suggestions,
       normalized: normalizedAddress,
+      taxOffice,
     };
   }
 

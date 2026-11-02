@@ -3,8 +3,10 @@ import type {
   CitySearchResult,
   PostalCodeSearchResult,
   RawAddressInput,
+  ResolveTaxOfficeParams,
   SDKConfig,
   StreetSearchResult,
+  TaxOffice,
   ValidationResult,
 } from './types.ts';
 import { AddressDatabaseManager } from './db-manager.ts';
@@ -70,7 +72,14 @@ export class PolishAddressSDK {
   }
 
   /**
-   * 5. Validates and normalizes raw address input for Gratyfikant nexo and ZUS Płatnik.
+   * 5. Resolves official Urząd Skarbowy (Tax Office) in < 1 ms by hierarchy of specificity.
+   */
+  public resolveTaxOffice(params: ResolveTaxOfficeParams): TaxOffice | null {
+    return this.ensureInitialized().resolveTaxOffice(params);
+  }
+
+  /**
+   * 6. Validates and normalizes raw address input for Gratyfikant nexo and ZUS Płatnik.
    */
   public validateAndFormatForExport(input: RawAddressInput): ValidationResult {
     return this.ensureInitialized().validateAndFormatForExport(input);
