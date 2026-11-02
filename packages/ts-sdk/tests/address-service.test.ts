@@ -23,6 +23,19 @@ test('AddressService.findByPostalCode - valid postal codes', () => {
   const wieniawska = lublin.streets.find((s) => s.name === 'Wieniawska');
   assert.ok(wieniawska, 'Should find street Wieniawska for postal code 20-071');
   assert.strictEqual(wieniawska.ulicId, '24123');
+
+  // Test postal code 20-076 (Krakowskie Przedmieście in Lublin)
+  const result20076 = service.findByPostalCode('20-076');
+  assert.ok(result20076, 'Result for 20-076 should exist');
+  assert.strictEqual(result20076.postalCode, '20-076');
+  const lublin2 = result20076.cities.find((c) => c.name === 'Lublin');
+  assert.ok(lublin2, 'Should find Lublin for 20-076');
+  assert.strictEqual(lublin2.terytCode, '0663011');
+  assert.strictEqual(lublin2.simcId, '0954995');
+  const krakowskie = lublin2.streets.find((s) => s.name === 'Krakowskie Przedmieście');
+  assert.ok(krakowskie, 'Should find Krakowskie Przedmieście');
+  assert.strictEqual(krakowskie.ulicId, '09895');
+  assert.strictEqual(krakowskie.cecha, 'ul.');
 });
 
 test('AddressService.findByPostalCode - non-existent and invalid postal codes', () => {
