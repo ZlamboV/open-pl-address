@@ -14,5 +14,11 @@ namespace OpenPlAddress.Sdk.Models
         public string? UlicId { get; set; }
         public string NrDomu { get; set; } = string.Empty;
         public string? NrLokalu { get; set; }
+
+        /// <summary>
+        /// If true, allows building numbers not yet found in official PRG data (e.g. new developments).
+        /// Emits a warning instead of a blocking error.
+        /// </summary>
+        public bool AllowManualBuilding { get; set; }
     }
 }

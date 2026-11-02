@@ -67,8 +67,14 @@ export interface RawAddressInput {
   simcId?: string; // Optional known SIMC ID
   ulica?: string; // Street name (e.g. "Wieniawska", "Венявська")
   ulicId?: string; // Optional known ULIC ID
-  nrDomu: string; // Building number (e.g. "12", "12A", "84/92")
+  nrDomu: string; // Building number (e.g. "12", "12A", "55", "84/92")
   nrLokalu?: string; // Apartment / premises number (e.g. "4")
+  /**
+   * If true, permits manual building numbers not yet recorded in official PRG data
+   * (e.g. newly built houses, new developments, or custom seed tests).
+   * Generates a warning instead of a blocking error.
+   */
+  allowManualBuilding?: boolean;
 }
 
 export interface NormalizedAddress {
@@ -90,6 +96,7 @@ export interface NormalizedAddress {
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
+  warnings?: string[];
   suggestions: string[];
   normalized: NormalizedAddress | null;
 }

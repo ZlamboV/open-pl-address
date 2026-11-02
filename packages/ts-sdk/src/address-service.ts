@@ -300,6 +300,7 @@ export class AddressService {
    */
   public validateAndFormatForExport(input: RawAddressInput): ValidationResult {
     const errors: string[] = [];
+    const warnings: string[] = [];
     const suggestions: string[] = [];
 
     const normBuilding = normalizeBuildingNumber(input.nrDomu);
@@ -392,9 +393,19 @@ export class AddressService {
           finalPostalCode = bldCheck.postalCode;
         }
       } else {
-        errors.push(`Numer budynku "${normBuilding}" nie istnieje pod adresem "${street?.name ?? city.name}".`);
-        if (bldCheck.availableNumbers.length > 0) {
-          suggestions.push(`Dostępne numery: ${bldCheck.availableNumbers.slice(0, 10).join(', ')}`);
+        if (input.allowManualBuilding) {
+          // Permitted unlisted building (new development / manual override)
+          warnings.push(
+            `Numer budynku "${normBuilding}" nie figuruje w rejestrze PRG (może to być nowo wybudowany budynek). Adres zaakceptowano w trybie ręcznym.`
+          );
+          if (!finalPostalCode && bldCheck.allPostalCodesForStreet.length > 0) {
+            finalPostalCode = bldCheck.allPostalCodesForStreet[0];
+          }
+        } else {
+          errors.push(`Numer budynku "${normBuilding}" nie istnieje pod adresem "${street?.name ?? city.name}".`);
+          if (bldCheck.availableNumbers.length > 0) {
+            suggestions.push(`Dostępne numery: ${bldCheck.availableNumbers.slice(0, 10).join(', ')}`);
+          }
         }
       }
     }
@@ -431,6 +442,7 @@ export class AddressService {
     return {
       isValid,
       errors,
+      warnings,
       suggestions,
       normalized: normalizedAddress,
     };
