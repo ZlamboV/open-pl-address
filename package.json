@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Universal Polish Address Database & Embedded SDK (TERYT + PRG) for ZUS Platnik and Gratyfikant nexo",
   "private": true,
+  "type": "module",
   "workspaces": [
     "builder",
     "packages/*"
@@ -10,6 +11,8 @@
   "scripts": {
     "build:seed": "node --experimental-strip-types builder/src/index.ts --seed",
     "build:full": "node --experimental-strip-types builder/src/index.ts --full",
+    "demo": "node --experimental-strip-types examples/interactive_demo.ts",
+    "cli": "node --experimental-strip-types examples/cli.ts",
     "test:ts": "node --experimental-strip-types --test packages/ts-sdk/tests/**/*.test.ts",
     "test": "npm run test:ts"
   },
