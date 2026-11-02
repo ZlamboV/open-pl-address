@@ -35,7 +35,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pl-address/open-pl-address.git",
+    "url": "git+https://github.com/ZlamboV/open-pl-address.git",
     "directory": "packages/mcp-server"
   },
   "dependencies": {

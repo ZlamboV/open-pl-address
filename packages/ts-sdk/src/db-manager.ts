@@ -41,7 +41,7 @@ export class AddressDatabaseManager {
   constructor(config: SDKConfig = {}) {
     this.config = {
       dbPath: resolveDefaultDbPath(config.dbPath),
-      updateUrl: config.updateUrl ?? 'https://github.com/open-pl-address/open-pl-address/releases/latest/download',
+      updateUrl: config.updateUrl ?? 'https://github.com/ZlamboV/open-pl-address/releases/latest/download',
       autoUpdateDays: config.autoUpdateDays ?? 7,
       autoDownloadOnMissing: config.autoDownloadOnMissing ?? true,
     };

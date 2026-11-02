@@ -40,12 +40,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pl-address/open-pl-address.git",
+    "url": "git+https://github.com/ZlamboV/open-pl-address.git",
     "directory": "packages/ts-sdk"
   },
-  "homepage": "https://github.com/open-pl-address/open-pl-address#readme",
+  "homepage": "https://github.com/ZlamboV/open-pl-address#readme",
   "bugs": {
-    "url": "https://github.com/open-pl-address/open-pl-address/issues"
+    "url": "https://github.com/ZlamboV/open-pl-address/issues"
   },
   "author": "open-pl-address contributors",
   "license": "MIT",

@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![NPM Version](https://img.shields.io/npm/v/open-pl-address.svg?color=cb3837)](https://www.npmjs.com/package/open-pl-address)
 [![NuGet Version](https://img.shields.io/nuget/v/OpenPlAddress.Sdk.svg?color=004880)](https://www.nuget.org/packages/OpenPlAddress.Sdk)
-[![CI Status](https://github.com/open-pl-address/open-pl-address/actions/workflows/ci.yml/badge.svg)](https://github.com/open-pl-address/open-pl-address/actions/workflows/ci.yml)
-[![Weekly Database Build](https://github.com/open-pl-address/open-pl-address/actions/workflows/update-db.yml/badge.svg)](https://github.com/open-pl-address/open-pl-address/actions/workflows/update-db.yml)
+[![CI Status](https://github.com/ZlamboV/open-pl-address/actions/workflows/ci.yml/badge.svg)](https://github.com/ZlamboV/open-pl-address/actions/workflows/ci.yml)
+[![Weekly Database Build](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml/badge.svg)](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml)
 [![MCP Server](https://img.shields.io/badge/MCP-Server%20Ready-8A2BE2.svg)](packages/mcp-server)
 [![Query Speed](https://img.shields.io/badge/Query%20Latency-%3C1%20ms-success.svg)](#benchmarks)
 

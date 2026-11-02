@@ -18,7 +18,7 @@ Please review and adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
 ### Getting Started
 ```bash
 # Clone the repository
-git clone https://github.com/open-pl-address/open-pl-address.git
+git clone https://github.com/ZlamboV/open-pl-address.git
 cd open-pl-address
 
 # Build the demo seed database
