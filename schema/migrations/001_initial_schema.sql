@@ -71,6 +71,32 @@ CREATE VIRTUAL TABLE IF NOT EXISTS streets_fts USING fts5(
     tokenize = 'unicode61'
 );
 
+-- 6. Urząd Skarbowy (Tax Offices - Ministerstwo Finansów)
+CREATE TABLE IF NOT EXISTS tax_offices (
+    us_code     TEXT PRIMARY KEY, -- 4 digits MF code, e.g. "0610"
+    name        TEXT NOT NULL,    -- Official name, e.g. "Pierwszy Urząd Skarbowy w Lublinie"
+    city        TEXT,             -- Office city
+    street      TEXT,             -- Office street
+    postal_code TEXT              -- Office postal code
+);
+
+-- 7. Tax Office Rules (Territorial jurisdiction mapping by specificity hierarchy)
+CREATE TABLE IF NOT EXISTS tax_office_rules (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    us_code          TEXT NOT NULL REFERENCES tax_offices(us_code),
+    teryt_code       TEXT NOT NULL,    -- TERC code (7 digits or prefix, e.g. "0663011")
+    simc_id          TEXT,             -- 7-digit SIMC identifier (nullable)
+    ulic_id          TEXT,             -- 5-digit ULIC identifier (nullable)
+    building_parity  TEXT DEFAULT 'ALL', -- 'ALL', 'EVEN', 'ODD'
+    building_from    INTEGER,          -- Range start (inclusive, nullable)
+    building_to      INTEGER,          -- Range end (inclusive, nullable)
+    priority         INTEGER NOT NULL  -- 1: street + range/parity, 2: whole street, 3: city, 4: gmina
+);
+
+CREATE INDEX IF NOT EXISTS idx_tax_rules_lookup ON tax_office_rules(teryt_code, simc_id, ulic_id, priority);
+CREATE INDEX IF NOT EXISTS idx_tax_rules_us ON tax_office_rules(us_code);
+CREATE INDEX IF NOT EXISTS idx_tax_rules_priority ON tax_office_rules(priority);
+
 -- Metadata table for version tracking & integrity
 CREATE TABLE IF NOT EXISTS db_metadata (
     key   TEXT PRIMARY KEY,

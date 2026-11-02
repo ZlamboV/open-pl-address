@@ -77,3 +77,35 @@ FTS5 virtual tables using `unicode61` tokenizer for instant prefix search:
 ```sql
 SELECT simc_id, name FROM cities_fts WHERE cities_fts MATCH 'lubl*' LIMIT 10;
 ```
+
+---
+
+### 6. `tax_offices`
+Official Polish Tax Offices (Urzędy Skarbowe) according to Ministerstwo Finansów CRD codes.
+| Column | Type | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `us_code` | `TEXT PRIMARY KEY` | 4-digit MF CRD code | `0610` |
+| `name` | `TEXT NOT NULL` | Official name of the tax office | `Pierwszy Urząd Skarbowy w Lublinie` |
+| `city` | `TEXT NULL` | City where office is located | `Lublin` |
+| `street` | `TEXT NULL` | Street address of the office | `ul. Sądowa 5` |
+| `postal_code` | `TEXT NULL` | Postal code of the office | `20-027` |
+
+### 7. `tax_office_rules`
+Territorial jurisdiction rules mapping administrative locations and address ranges to tax offices.
+Rules are resolved by priority:
+- **Priority 1**: Street + building number range / parity (`EVEN`, `ODD`)
+- **Priority 2**: Whole street (`ulic_id`)
+- **Priority 3**: City (`simc_id`)
+- **Priority 4**: Gmina / Powiat (`teryt_code`)
+
+| Column | Type | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER PRIMARY KEY` | Auto-increment rule ID | `1` |
+| `us_code` | `TEXT NOT NULL` | Foreign key to `tax_offices.us_code` | `0610` |
+| `teryt_code` | `TEXT NOT NULL` | TERC code (7 digits or prefix) | `0663011` |
+| `simc_id` | `TEXT NULL` | 7-digit SIMC identifier | `0954995` |
+| `ulic_id` | `TEXT NULL` | 5-digit ULIC identifier | `24123` |
+| `building_parity` | `TEXT DEFAULT 'ALL'` | Building parity filter: `'ALL'`, `'EVEN'`, `'ODD'` | `'ODD'` |
+| `building_from` | `INTEGER NULL` | Lower bound building number (inclusive) | `1` |
+| `building_to` | `INTEGER NULL` | Upper bound building number (inclusive) | `11` |
+| `priority` | `INTEGER NOT NULL` | Specificity priority (1: highest, 4: lowest) | `1` |
