@@ -5,7 +5,7 @@ Optimized for **InsERT Gratyfikant nexo (Sfera)**, **ZUS Płatnik**, and high-pe
 
 ## Features
 - **Local Embedded SQLite (<1 ms latency)**: High speed in-process queries via `Microsoft.Data.Sqlite`.
-- **Zero-Config & Auto-Sync**: Background check for weekly database updates (`manifest.json`) and safe atomic hot-swap.
+- **Zero-Config & Auto-Sync**: Background check for monthly database updates (`manifest.json`) and safe atomic hot-swap.
 - **Diacritics & Cyrillic Resilience**: Removes Polish diacritics and handles phonetic Cyrillic transliteration.
 - **Official Identifiers**: Exports 7-digit TERC gmina codes, 7-digit SIMC identifiers, and 5-digit ULIC identifiers.
 
@@ -36,7 +36,7 @@ using OpenPlAddress.Sdk.Models;
 var sdk = new PolishAddressSdk(new PolishAddressSdkOptions
 {
     DbPath = @"C:\ProgramData\OpenPlAddress\pl_addresses.sqlite",
-    // Optional remote GitHub releases URL for weekly updates:
+    // Optional remote GitHub releases URL for monthly updates:
     // UpdateUrl = "https://github.com/your-org/open-pl-address/releases/latest/download",
     AutoUpdateDays = 7
 });

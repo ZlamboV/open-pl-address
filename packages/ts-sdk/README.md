@@ -4,7 +4,7 @@ High-performance Embedded SQLite SDK for searching, autocompleting, and strictly
 
 ## Key Features
 - **Embedded Database (<1 ms queries)**: Reads local `.sqlite` database using native SQLite or `better-sqlite3`. Zero network latency during queries.
-- **Zero-Config & Auto-Sync**: Automatically downloads the database file on first run and safely checks for weekly updates with atomic Hot-swap in the background.
+- **Zero-Config & Auto-Sync**: Automatically downloads the database file on first run and safely checks for monthly updates with atomic Hot-swap in the background.
 - **Diacritics & Cyrillic Resilience**: Search `lodz` or `wieniawska` to find `Łódź` and `Wieniawska`. Ukrainian/Russian transliteration allows Telegram bot users to type `Люблін` or `вул. Венявська`.
 - **Building Validation**: Confirms house numbers (including letters like `12A`, `84/92`) and maps them directly to exact postal codes.
 - **Official TERYT / PRG Compliance**: Exports canonical 7-digit TERC gmina codes, 7-digit SIMC city codes, and 5-digit ULIC street codes.
@@ -28,7 +28,7 @@ import { PolishAddressSDK } from 'open-pl-address';
 
 const sdk = new PolishAddressSDK({
   dbPath: './data/pl_addresses.sqlite',
-  // Optional remote source for weekly auto-updates:
+  // Optional remote source for monthly auto-updates:
   // updateUrl: 'https://github.com/your-org/open-pl-address/releases/latest/download'
 });
 

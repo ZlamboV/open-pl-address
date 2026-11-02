@@ -1,9 +1,9 @@
-name: Weekly Polish Address Database Update & Release
+name: Monthly Polish Address Database Update & Release
 
 on:
   schedule:
-    # Runs every Monday at 03:00 UTC
-    - cron: '0 3 * * 1'
+    # Runs on the 5th of every month at 03:00 UTC (after monthly GUS & GUGiK updates settle)
+    - cron: '0 3 5 * *'
   workflow_dispatch:
     inputs:
       build_type:
@@ -75,7 +75,7 @@ jobs:
             data/pl_addresses.sqlite.gz
             data/manifest.json
           body: |
-            ### Automated Weekly Polish Address Database Update
+            ### Automated Monthly Polish Address Database Update
             
             - **Version:** `${{ steps.vars.outputs.version }}`
             - **Built:** `${{ steps.vars.outputs.version }}`

@@ -4,7 +4,7 @@
 [![NPM Version](https://img.shields.io/npm/v/open-pl-address.svg?color=cb3837)](https://www.npmjs.com/package/open-pl-address)
 [![NuGet Version](https://img.shields.io/nuget/v/OpenPlAddress.Sdk.svg?color=004880)](https://www.nuget.org/packages/OpenPlAddress.Sdk)
 [![CI Status](https://github.com/ZlamboV/open-pl-address/actions/workflows/ci.yml/badge.svg)](https://github.com/ZlamboV/open-pl-address/actions/workflows/ci.yml)
-[![Weekly Database Build](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml/badge.svg)](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml)
+[![Monthly Database Build](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml/badge.svg)](https://github.com/ZlamboV/open-pl-address/actions/workflows/update-db.yml)
 [![MCP Server](https://img.shields.io/badge/MCP-Server%20Ready-8A2BE2.svg)](packages/mcp-server)
 [![Query Speed](https://img.shields.io/badge/Query%20Latency-%3C1%20ms-success.svg)](#benchmarks)
 
@@ -40,7 +40,7 @@ flowchart TD
         MF["MF CRD (Tax Offices & Jurisdiction)"]
     end
 
-    subgraph Builder["Builder Pipeline (Weekly GitHub Actions)"]
+    subgraph Builder["Builder Pipeline (Monthly GitHub Actions)"]
         Agg["Aggregates House Numbers into JSON"]
         Norm["Diacritics & Cyrillic Transliteration Engine"]
         FTS["Compiles SQLite with FTS5 Virtual Tables"]
@@ -48,7 +48,7 @@ flowchart TD
     end
 
     subgraph Distribution["GitHub Releases CDN"]
-        CDN["Weekly Versioned Artifacts with SHA-256"]
+        CDN["Monthly Versioned Artifacts with SHA-256"]
     end
 
     subgraph Clients["Embedded Client SDKs & Tools"]
@@ -69,7 +69,7 @@ flowchart TD
 1. **Central Compiler (`/builder`)**:
    Streaming pipeline downloading GUS TERYT, GUGiK PRG, and Ministry of Finance CRD XSD schemas. Aggregates 8.5M+ address points into street-level JSON maps, strips diacritics, indexes Cyrillic phonetic transliterations, and builds SQLite with FTS5.
 2. **Client SDKs (`ts-sdk`, `csharp-sdk`, `mcp-server`)**:
-   Operate in-process with zero network overhead. Background timers poll `manifest.json` weekly and execute atomic, zero-downtime **Hot-swaps**.
+   Operate in-process with zero network overhead. Background timers poll `manifest.json` monthly and execute atomic, zero-downtime **Hot-swaps**.
 
 ---
 
@@ -82,7 +82,7 @@ open-pl-address/
 │       ├── ci.yml                 # Continuous Integration for Node.js & .NET
 │       ├── publish-npm.yml        # Automated NPM release workflow
 │       ├── publish-nuget.yml      # Automated NuGet.org release workflow
-│       └── update-db.yml          # Weekly automated DB compiler & release publisher
+│       └── update-db.yml          # Monthly automated DB compiler & release publisher
 ├── builder/                       # Pipeline compiling TERYT + PRG + MF CRD into SQLite
 ├── schema/                        # SQL migrations and schema documentation
 ├── packages/

@@ -42,8 +42,8 @@ async function main() {
   });
 
   const now = new Date();
-  const weekNumber = Math.ceil((((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000) + 1) / 7);
-  const version = `${now.getFullYear()}.${weekNumber}.0`;
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const version = `${now.getFullYear()}.${month}.0`;
 
   if (isSeed) {
     console.log(`\nBuilding Seed Database v${version}...`);
