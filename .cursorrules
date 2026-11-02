@@ -1,41 +1,41 @@
 # open-pl-address Cursor Rules
 # Guidelines for AI coding agents handling Polish addresses, ERP systems, and tax compliance
+# Reference: See AGENTS.md for full architectural specifications
 
-## 1. Core Principles
-- **No Address Hallucinations**: Never generate synthetic Polish postal codes, TERYT codes, or Tax Office codes from memory. Always verify against the embedded SQLite database (`open-pl-address` SDK or MCP tools).
-- **Embedded First**: All lookups run locally in-process via SQLite (< 1 ms latency). Avoid recommending external paid APIs (e.g. Google Maps Geocoding, GUS SOAP API) when `open-pl-address` provides 100% offline official data.
-- **Strict Polish Administrative Division**:
-  - `TERC`: 7-digit code (e.g. `0663011` for m. Lublin): `WOJ`(2) + `POW`(2) + `GMI`(2) + `RODZ`(1).
-  - `SIMC`: 7-digit city identifier (e.g. `0954995` for Lublin).
-  - `ULIC`: 5-digit street identifier (e.g. `24123` for Wieniawska).
-  - House numbers: Verified against GUGiK Państwowy Rejestr Granic (PRG).
+## 1. Core Principles & Anti-Hallucination Law
+- Master Anchor: Always consult AGENTS.md for architecture, database schemas, and data specifications.
+- No Address Hallucinations: NEVER invent Polish postal codes (PNA), TERC codes, SIMC codes, or Tax Office codes from memory. Always verify against the embedded SQLite database via open-pl-address SDK or MCP tools.
+- Embedded-First (MaxMind GeoIP Paradigm): All lookups run locally in-process via SQLite (< 1 ms latency). Never recommend external paid APIs (Google Maps Geocoding, GUS SOAP API) when open-pl-address provides 100% offline official data.
 
-## 2. Crucial Legal & Tax Rules (Poland)
-- **Zameldowanie vs. Miejsce Zamieszkania**:
-  - `Adres zameldowania` (registered address) is purely administrative and DOES NOT determine tax jurisdiction.
-  - Polish income tax (PIT-11, PIT-4R, PIT-37) and tax residency are determined SOLELY by **`miejsce zamieszkania`** (actual place of residence on December 31 or the date of declaration) and the corresponding **`Urząd Skarbowy`**.
-- **Multi-District Cities Jurisdiction Hierarchy**:
-  In major Polish cities (Warszawa, Poznań, Kraków, Wrocław, Łódź, Lublin), jurisdiction is divided across multiple Tax Offices based on an exact 4-tier hierarchy:
-  1. **Priority 1**: Street name + building number range / odd-even parity.
-  2. **Priority 2**: Entire street name within the city.
-  3. **Priority 3**: City SIMC code.
-  4. **Priority 4**: Gmina 7-digit TERC code.
-  Always resolve through `sdk.resolveTaxOffice(...)` or `resolve_urzad_skarbowy` MCP tool.
+## 2. Monorepo File Navigation
+- builder/            : Offline compiler downloading GUS TERYT + GUGiK PRG and emitting SQLite.
+- packages/ts-sdk/    : Zero-runtime-dependency TypeScript SDK (node:sqlite, ESM NodeNext).
+- packages/csharp-sdk/: .NET SDK targeting netstandard2.0 and net8.0 (Microsoft.Data.Sqlite).
+- packages/mcp-server/: Model Context Protocol stdio server with 5 address tools.
+- schema/             : Database migrations (001_initial_schema.sql) and schema README.
+- docs/               : Recipes (Sfera, ZUS, Telegram) and GitHub Wiki documentation.
+- data/               : Compiled SQLite database (pl_addresses.sqlite), .gz, and manifest.json.
 
-## 3. Systems Integration Standards
-- **ZUS Płatnik**:
-  - Mandatory fields: 7-digit `terytGminaCode`, canonical Polish city name (`miejscowosc`), street (`ulica`), house number (`nrDomu`), postal code (`kodPocztowy` in format `XX-XXX`).
-  - For villages without streets: `ulica` MUST be `null` or empty string, with village name in `miejscowosc`.
-- **InsERT Gratyfikant nexo (Sfera)**:
-  - Map `NormalizedAddress` to `Pracownik.AdresZamieszkania` / `Podmiot.AdresDostawy`.
-  - Link `taxOffice.usCode` (4-digit MF CRD code, e.g. `0610`, `3023`) to `Instytucje.UrzedySkarbowe`.
+## 3. Polish Administrative & Tax Rules
+- 7-digit TERC: WOJ(2) + POW(2) + GMI(2) + RODZ(1) (e.g. 0663011 for m. Lublin). Mandatory for ZUS Płatnik.
+- 7-digit SIMC: Unique city/locality identifier (e.g. 0954995 for Lublin).
+- 5-digit ULIC: Unique street identifier (e.g. 24123 for ul. Wieniawska). Null in villages without streets.
+- 4-digit MF US Code: Ministry of Finance Tax Office code (e.g. 0610 for Pierwszy US w Lublinie).
+- Zameldowanie vs. Miejsce Zamieszkania: Registered address (zameldowanie) is administrative and does NOT govern tax jurisdiction. Polish PIT-11 declarations require actual place of residence on Dec 31 (miejsce zamieszkania).
+- 4-Level Tax Office Waterfall:
+  1. Priority 1: Street + building range / parity (EVEN, ODD).
+  2. Priority 2: Whole street within city.
+  3. Priority 3: City SIMC code.
+  4. Priority 4: Gmina TERC code.
 
 ## 4. Cyrillic & Diacritics Handling
-- Foreign employees and users often enter Polish addresses using Ukrainian or Russian Cyrillic keyboards (e.g., "Варшава", "Коперника", "Венявська", "Лодзь").
-- Always sanitize inputs through `TextNormalizer.stripDiacritics()` and `TextNormalizer.toCyrillicPhonetic()` before exact matching, or query the FTS5 virtual tables (`cities_fts`, `streets_fts`).
+- Foreign employees and users frequently type Polish addresses with Ukrainian or Russian Cyrillic (e.g., "Люблін", "Варшава", "Коперника").
+- Always sanitize inputs through TextNormalizer.stripDiacritics() and TextNormalizer.toCyrillicPhonetic() or query FTS5 virtual tables (cities_fts, streets_fts).
 
-## 5. Working with the Codebase
-- Root test runner: `npm test` runs TS SDK tests and MCP server tests.
-- C# SDK test runner: `dotnet test packages/csharp-sdk/OpenPlAddress.sln`.
-- MCP Server run: `node --experimental-strip-types packages/mcp-server/src/index.ts`.
-- Zero runtime dependencies for Node.js: Uses built-in `node:sqlite`. Do not introduce heavy external HTTP or DB dependencies without discussion.
+## 5. Coding & Commit Invariants
+- Zero Runtime Dependencies: packages/ts-sdk must have 0 runtime dependencies. Use node:sqlite, node:fs, node:crypto, node:zlib.
+- Strict TypeScript: "strict": true, ES2022, NodeNext. No unconstrained 'any'.
+- C# Compatibility: Dual-target netstandard2.0 (for InsERT Sfera) and net8.0.
+- Conventional Commits: Every commit MUST end with [AI-Assisted].
+  Example: feat(mcp): add building number validation tool [AI-Assisted]
+- Test Command: Always run 'npm test' to verify all TypeScript and MCP tests pass.
