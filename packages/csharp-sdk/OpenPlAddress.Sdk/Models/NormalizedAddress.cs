@@ -45,5 +45,10 @@ namespace OpenPlAddress.Sdk.Models
         public string KodPocztowy { get; set; } = string.Empty;
 
         public string Poczta { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Resolved Urząd Skarbowy (Tax Office) for employee PIT-11 declarations and InsERT Gratyfikant nexo.
+        /// </summary>
+        public TaxOffice? TaxOffice { get; set; }
     }
 }
