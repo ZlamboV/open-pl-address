@@ -1,0 +1,65 @@
+name: Sync Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/wiki/**'
+      - '.github/workflows/sync-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    name: Sync docs/wiki to GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Synchronize docs/wiki to GitHub Wiki
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -d "docs/wiki" ] || [ -z "$(ls -A docs/wiki 2>/dev/null)" ]; then
+            echo "Directory docs/wiki does not exist or is empty. Nothing to sync."
+            exit 0
+          fi
+
+          # Synchronizes docs/wiki/ to https://github.com/ZlamboV/open-pl-address.wiki.git
+          WIKI_REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git"
+          TEMP_DIR=$(mktemp -d)
+
+          echo "Cloning wiki repository..."
+          if ! git clone "${WIKI_REPO_URL}" "${TEMP_DIR}" 2>/dev/null; then
+            echo "Wiki clone failed (repository may be empty or uninitialized). Initializing local git repo..."
+            mkdir -p "${TEMP_DIR}"
+            git -C "${TEMP_DIR}" init -b master
+            git -C "${TEMP_DIR}" remote add origin "${WIKI_REPO_URL}"
+          fi
+
+          echo "Synchronizing wiki files..."
+          # Remove existing tracked files in wiki repo except .git
+          find "${TEMP_DIR}" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+
+          # Copy all files from docs/wiki to wiki root
+          cp -R docs/wiki/. "${TEMP_DIR}/"
+
+          cd "${TEMP_DIR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to sync. GitHub Wiki is already up-to-date."
+          else
+            git commit -m "docs(wiki): sync documentation from main (${{ github.sha }}) [AI-Assisted]"
+            echo "Pushing changes to wiki repository..."
+            git push origin HEAD:master || git push origin HEAD:main
+            echo "Wiki successfully synchronized."
+          fi

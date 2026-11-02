@@ -1,43 +1,59 @@
 # GitHub Copilot Instructions for `open-pl-address`
 
-## Project Identity & Architecture
-`open-pl-address` is an open-source monorepo implementing an Embedded Database SDK (similar to MaxMind GeoIP) for Polish address validation, auto-complete, Cyrillic transliteration, and automatic **Urząd Skarbowy (Tax Office)** determination.
+Guidelines for GitHub Copilot Chat and inline code generation across the `open-pl-address` monorepo.
 
-### Core Stack
-- **Database**: SQLite with FTS5 virtual tables (`cities_fts`, `streets_fts`). In-process queries execute in < 1 ms without network requests.
-- **Node.js / TypeScript (`packages/ts-sdk`)**: Zero-dependency embedded SDK using Node.js built-in `node:sqlite` (`DatabaseSync`). Modern ESM with type safety and Hot-swap zero-downtime updates.
-- **.NET / C# (`packages/csharp-sdk`)**: .NET Standard 2.0 & .NET 8 class library via `Microsoft.Data.Sqlite`, designed for InsERT Gratyfikant nexo Sfera and ZUS Płatnik ERP systems.
-- **MCP Server (`packages/mcp-server`)**: Model Context Protocol stdio server allowing Cursor, Claude, Antigravity, and Copilot to validate Polish addresses and resolve tax offices.
+> **Master Architecture Reference**: See `/AGENTS.md` for complete database schemas, identifier specifications, and architectural invariants.
 
 ---
 
-## Coding Guidelines
+## 1. Project Identity & Architecture
 
-### 1. Address Domain Rules
-- **7-digit TERC**: Województwo (2) + Powiat (2) + Gmina (2) + Rodzaj (1). Example: `0663011` for Lublin.
-- **7-digit SIMC**: City/locality identifier. Example: `0954995` for Lublin.
-- **5-digit ULIC**: Street identifier. Example: `24123` for ul. Wieniawska.
-- **Tax Office CRD**: 4-digit code issued by Polish Ministry of Finance. Example: `0610` for Pierwszy US w Lublinie.
-- **Building Numbers**: Numbers can be alphanumeric (e.g. `12A`, `15/17`). Numeric sorting and parity checks must extract the leading integer part (`extractBuildingNumericPart`).
+`open-pl-address` is an open-source embedded database SDK suite (similar to MaxMind GeoIP) for Polish address validation, auto-complete, Cyrillic transliteration, and automatic **Urząd Skarbowy (Tax Office)** determination.
 
-### 2. Legal Precedence (Crucial for Accounting & Payroll)
-- Do not mistake `zameldowanie` (administrative registration) for `miejsce zamieszkania` (tax residence). Polish PIT-11 and PIT-4R declarations require the actual place of residence as of December 31.
-- In multi-tax office cities, resolve tax offices using the strict 4-priority waterfall:
-  1. Street + building range / parity.
-  2. Whole street name in city.
-  3. City SIMC code.
-  4. Gmina TERC code.
+### Core Stack
+- **Database**: SQLite with FTS5 virtual tables (`cities_fts`, `streets_fts`). In-process queries execute in < 1 ms without network calls.
+- **Node.js / TypeScript (`packages/ts-sdk`)**: Zero-dependency embedded SDK using Node.js 22 built-in `node:sqlite` (`DatabaseSync`). Modern ESM with type safety and atomic zero-downtime hot-swap.
+- **.NET / C# (`packages/csharp-sdk`)**: .NET Standard 2.0 & .NET 8 class library via `Microsoft.Data.Sqlite`, designed for InsERT Gratyfikant nexo Sfera and ZUS Płatnik ERP systems.
+- **MCP Server (`packages/mcp-server`)**: Model Context Protocol stdio server providing 5 tools (`search_polish_city`, `autocomplete_polish_street`, `validate_polish_address`, `resolve_urzad_skarbowy`, `find_by_postal_code`).
+- **Database CalVer**: `YYYY.MM.0`, released on the 5th of each month at 03:00 UTC via GitHub Actions.
 
-### 3. TypeScript / Node.js
-- Keep runtime dependencies to 0. Rely on `node:sqlite`, `node:fs`, `node:crypto`, `node:zlib`, `node:readline`.
+---
+
+## 2. Domain & Legal Invariants
+
+1. **State Identifiers**:
+   - `TERC`: 7-digit administrative gmina code (`0663011`). Mandatory for ZUS Płatnik.
+   - `SIMC`: 7-digit locality/city identifier (`0954995`).
+   - `ULIC`: 5-digit street identifier (`24123`).
+   - `MF US Code`: 4-digit Ministry of Finance Tax Office code (`0610`).
+   - `Building Numbers`: Alphanumeric (`12A`, `15/17`). Numeric parsing uses `extractBuildingNumericPart`.
+2. **Tax Law Invariant (Zameldowanie vs. Miejsce Zamieszkania)**:
+   - `zameldowanie` (administrative registration) does NOT determine tax residency.
+   - PIT-11, PIT-4R, and PIT-37 declarations require `miejsce zamieszkania` (actual residence on Dec 31).
+3. **4-Tier Tax Office Waterfall**:
+   - Priority 1: Street + building range / parity (`EVEN`, `ODD`).
+   - Priority 2: Whole street within city.
+   - Priority 3: City SIMC code.
+   - Priority 4: Gmina TERC code.
+
+---
+
+## 3. Language & Coding Guidelines
+
+### TypeScript / Node.js
+- Keep runtime dependencies strictly at 0 in `packages/ts-sdk`. Rely on `node:sqlite`, `node:fs`, `node:crypto`, `node:zlib`, `node:readline`.
 - Follow strict typing: avoid `any` unless absolutely interfacing with raw C-bindings in SQLite statements.
-- Unit tests use the built-in Node.js test runner: `node --experimental-strip-types --test tests/**/*.test.ts`.
+- Unit tests run with Node.js built-in runner: `npm test`.
 
-### 4. C# / .NET
-- Maintain compatibility with both `.NET Standard 2.0` (for legacy .NET Framework 4.7.2+ Sfera Gratyfikant nexo integrations) and `.NET 8`.
+### C# / .NET
+- Maintain dual compatibility: `.NET Standard 2.0` (for legacy .NET Framework 4.7.2+ Sfera Gratyfikant nexo integrations) and `.NET 8`.
 - Use `Microsoft.Data.Sqlite` with parameterized queries.
-- Ensure thread safety during database hot-swaps using read-write locks or reader reference counting.
+- Ensure thread safety during database hot-swaps using reader/writer synchronization.
 
-### 5. MCP Protocol
+### MCP Protocol
 - MCP stdio communication uses `stdout` strictly for JSON-RPC 2.0 messages.
 - Any logging or debug output MUST be directed to `stderr` (`console.error`).
+
+### Conventional Commits
+- All commit messages MUST include the `[AI-Assisted]` suffix:
+  `feat(sdk): add support for apartment validation [AI-Assisted]`
