@@ -24,11 +24,17 @@ jobs:
 
       - name: Synchronize docs/wiki to GitHub Wiki
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.WIKI_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           if [ ! -d "docs/wiki" ] || [ -z "$(ls -A docs/wiki 2>/dev/null)" ]; then
             echo "Directory docs/wiki does not exist or is empty. Nothing to sync."
             exit 0
+          fi
+
+          if [ -z "${{ secrets.GH_TOKEN && 'set' || secrets.WIKI_TOKEN && 'set' || '' }}" ]; then
+            echo "::warning::Neither secrets.GH_TOKEN nor secrets.WIKI_TOKEN is configured."
+            echo "::warning::GitHub's default GITHUB_TOKEN does not have permissions to write to GitHub Wikis."
+            echo "::warning::To enable automated wiki sync, create a Personal Access Token (PAT) with 'repo' scope and add it as 'GH_TOKEN' in repository Secrets."
           fi
 
           # Synchronizes docs/wiki/ to https://github.com/ZlamboV/open-pl-address.wiki.git
@@ -37,7 +43,7 @@ jobs:
 
           echo "Cloning wiki repository..."
           if ! git clone "${WIKI_REPO_URL}" "${TEMP_DIR}" 2>/dev/null; then
-            echo "Wiki clone failed (repository may be empty or uninitialized). Initializing local git repo..."
+            echo "Wiki clone failed (repository may be empty or uninitialized on GitHub). Initializing local git repo..."
             mkdir -p "${TEMP_DIR}"
             git -C "${TEMP_DIR}" init -b master
             git -C "${TEMP_DIR}" remote add origin "${WIKI_REPO_URL}"
@@ -60,6 +66,11 @@ jobs:
           else
             git commit -m "docs(wiki): sync documentation from main (${{ github.sha }}) [AI-Assisted]"
             echo "Pushing changes to wiki repository..."
-            git push origin HEAD:master || git push origin HEAD:main
+            if ! (git push origin HEAD:master 2>&1 || git push origin HEAD:main 2>&1); then
+              echo "::error::Failed to push to GitHub Wiki repository."
+              echo "::error::1. Ensure the Wiki is initialized: visit https://github.com/${{ github.repository }}/wiki and click 'Create the first page'."
+              echo "::error::2. Ensure a Personal Access Token (PAT) with 'repo' scope is added as secret 'GH_TOKEN' (GITHUB_TOKEN cannot write to wikis)."
+              exit 1
+            fi
             echo "Wiki successfully synchronized."
           fi
