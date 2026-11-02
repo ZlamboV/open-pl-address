@@ -232,5 +232,25 @@ namespace OpenPlAddress.Sdk.Utils
 
             return cleaned.Replace(" ", "");
         }
+
+        /// <summary>
+        /// Extracts integer numeric part from building number for parity and range evaluation.
+        /// Examples: "12" -> 12, "12A" -> 12, "15/17" -> 15, "4A" -> 4.
+        /// </summary>
+        public static int? ExtractBuildingNumericPart(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return null;
+            var normalized = NormalizeBuildingNumber(input);
+            if (string.IsNullOrEmpty(normalized)) return null;
+
+            var match = Regex.Match(normalized, @"^(\d+)");
+            if (!match.Success) return null;
+
+            if (int.TryParse(match.Groups[1].Value, out var val))
+            {
+                return val;
+            }
+            return null;
+        }
     }
 }
