@@ -60,6 +60,22 @@ namespace OpenPlAddress.Sdk
             return EnsureRepository().ValidateBuilding(simcId, ulicId, buildingNumber);
         }
 
+        public TaxOffice? ResolveTaxOffice(TaxOfficeResolutionInput input)
+        {
+            return EnsureRepository().ResolveTaxOffice(input);
+        }
+
+        public TaxOffice? ResolveTaxOffice(string terytCode, string? simcId = null, string? ulicId = null, string? buildingNumber = null)
+        {
+            return EnsureRepository().ResolveTaxOffice(new TaxOfficeResolutionInput
+            {
+                TerytCode = terytCode,
+                SimcId = simcId,
+                UlicId = ulicId,
+                BuildingNumber = buildingNumber
+            });
+        }
+
         public ValidationResult ValidateAndFormatForExport(RawAddressInput input)
         {
             return EnsureRepository().ValidateAndFormatForExport(input);

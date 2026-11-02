@@ -486,6 +486,16 @@ namespace OpenPlAddress.Sdk.Storage
 
             var isValid = errors.Count == 0;
 
+            var taxOffice = city != null
+                ? ResolveTaxOffice(new TaxOfficeResolutionInput
+                {
+                    TerytCode = city.TerytCode,
+                    SimcId = city.SimcId,
+                    UlicId = street?.UlicId,
+                    BuildingNumber = normBuilding
+                })
+                : null;
+
             var normalized = new NormalizedAddress
             {
                 Wojewodztwo = city.Wojewodztwo,
@@ -500,7 +510,8 @@ namespace OpenPlAddress.Sdk.Storage
                 NrDomu = normBuilding,
                 NrLokalu = !string.IsNullOrWhiteSpace(input.NrLokalu) ? input.NrLokalu.Trim() : null,
                 KodPocztowy = finalPostalCode ?? string.Empty,
-                Poczta = city.Name
+                Poczta = city.Name,
+                TaxOffice = taxOffice
             };
 
             return new ValidationResult
@@ -508,8 +519,128 @@ namespace OpenPlAddress.Sdk.Storage
                 IsValid = isValid,
                 Errors = errors,
                 Suggestions = suggestions,
-                Normalized = normalized
+                Normalized = normalized,
+                TaxOffice = taxOffice
             };
+        }
+
+        /// <summary>
+        /// Resolves Urząd Skarbowy (Tax Office) in &lt; 1 ms by hierarchy of specificity.
+        /// </summary>
+        public TaxOffice? ResolveTaxOffice(TaxOfficeResolutionInput input)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(input.TerytCode)) return null;
+
+            var teryt = input.TerytCode.Trim();
+            var simc = !string.IsNullOrWhiteSpace(input.SimcId) ? input.SimcId!.Trim() : null;
+            var ulic = !string.IsNullOrWhiteSpace(input.UlicId) ? input.UlicId!.Trim() : null;
+            var bldNum = TextNormalizer.ExtractBuildingNumericPart(input.BuildingNumber);
+
+            const string sql = @"
+                SELECT 
+                    r.id,
+                    r.us_code,
+                    r.teryt_code,
+                    r.simc_id,
+                    r.ulic_id,
+                    r.building_parity,
+                    r.building_from,
+                    r.building_to,
+                    r.priority,
+                    t.name,
+                    t.city,
+                    t.street,
+                    t.postal_code
+                FROM tax_office_rules r
+                JOIN tax_offices t ON t.us_code = r.us_code
+                WHERE r.teryt_code IN ($teryt1, SUBSTR($teryt2, 1, 6), SUBSTR($teryt3, 1, 4))
+                  AND (r.simc_id IS NULL OR r.simc_id = $simc)
+                  AND (r.ulic_id IS NULL OR r.ulic_id = $ulic)
+                ORDER BY r.priority ASC, r.id ASC";
+
+            using var cmd = _connection.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.Parameters.AddWithValue("$teryt1", teryt);
+            cmd.Parameters.AddWithValue("$teryt2", teryt);
+            cmd.Parameters.AddWithValue("$teryt3", teryt);
+            cmd.Parameters.AddWithValue("$simc", (object?)simc ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("$ulic", (object?)ulic ?? DBNull.Value);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var priority = reader.GetInt32(8);
+                var ruleSimc = reader.IsDBNull(3) ? null : reader.GetString(3);
+                var ruleUlic = reader.IsDBNull(4) ? null : reader.GetString(4);
+                var parity = reader.IsDBNull(5) ? "ALL" : reader.GetString(5);
+                int? from = reader.IsDBNull(6) ? null : reader.GetInt32(6);
+                int? to = reader.IsDBNull(7) ? null : reader.GetInt32(7);
+
+                // Priority 1: street + building range/parity
+                if (priority == 1)
+                {
+                    if (string.IsNullOrEmpty(ruleUlic) || ruleUlic != ulic) continue;
+                    if (bldNum == null) continue;
+
+                    if (parity.Equals("EVEN", StringComparison.OrdinalIgnoreCase) && bldNum.Value % 2 != 0) continue;
+                    if (parity.Equals("ODD", StringComparison.OrdinalIgnoreCase) && bldNum.Value % 2 == 0) continue;
+
+                    if (from.HasValue && bldNum.Value < from.Value) continue;
+                    if (to.HasValue && bldNum.Value > to.Value) continue;
+
+                    return new TaxOffice
+                    {
+                        UsCode = reader.GetString(1),
+                        Name = reader.GetString(9),
+                        City = reader.IsDBNull(10) ? null : reader.GetString(10),
+                        Street = reader.IsDBNull(11) ? null : reader.GetString(11),
+                        PostalCode = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    };
+                }
+
+                // Priority 2: whole street
+                if (priority == 2)
+                {
+                    if (string.IsNullOrEmpty(ruleUlic) || ruleUlic != ulic) continue;
+                    return new TaxOffice
+                    {
+                        UsCode = reader.GetString(1),
+                        Name = reader.GetString(9),
+                        City = reader.IsDBNull(10) ? null : reader.GetString(10),
+                        Street = reader.IsDBNull(11) ? null : reader.GetString(11),
+                        PostalCode = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    };
+                }
+
+                // Priority 3: city
+                if (priority == 3)
+                {
+                    if (string.IsNullOrEmpty(ruleSimc) || ruleSimc != simc) continue;
+                    return new TaxOffice
+                    {
+                        UsCode = reader.GetString(1),
+                        Name = reader.GetString(9),
+                        City = reader.IsDBNull(10) ? null : reader.GetString(10),
+                        Street = reader.IsDBNull(11) ? null : reader.GetString(11),
+                        PostalCode = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    };
+                }
+
+                // Priority 4: gmina / powiat
+                if (priority == 4)
+                {
+                    return new TaxOffice
+                    {
+                        UsCode = reader.GetString(1),
+                        Name = reader.GetString(9),
+                        City = reader.IsDBNull(10) ? null : reader.GetString(10),
+                        Street = reader.IsDBNull(11) ? null : reader.GetString(11),
+                        PostalCode = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    };
+                }
+            }
+
+            return null;
         }
 
         private CityResult? GetCityBySimc(string simcId)

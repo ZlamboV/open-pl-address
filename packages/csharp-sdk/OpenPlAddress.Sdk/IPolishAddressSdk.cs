@@ -31,7 +31,17 @@ namespace OpenPlAddress.Sdk
         BuildingValidationResult ValidateBuilding(string simcId, string? ulicId, string buildingNumber);
 
         /// <summary>
-        /// 5. Validates and normalizes raw address input for Gratyfikant nexo and ZUS Płatnik.
+        /// 5. Resolves official Urząd Skarbowy (Tax Office) in &lt; 1 ms by hierarchy of specificity.
+        /// </summary>
+        TaxOffice? ResolveTaxOffice(TaxOfficeResolutionInput input);
+
+        /// <summary>
+        /// 5b. Resolves official Urząd Skarbowy (Tax Office) in &lt; 1 ms with individual parameters.
+        /// </summary>
+        TaxOffice? ResolveTaxOffice(string terytCode, string? simcId = null, string? ulicId = null, string? buildingNumber = null);
+
+        /// <summary>
+        /// 6. Validates and normalizes raw address input for Gratyfikant nexo and ZUS Płatnik.
         /// </summary>
         ValidationResult ValidateAndFormatForExport(RawAddressInput input);
 
