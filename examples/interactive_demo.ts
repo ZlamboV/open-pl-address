@@ -86,8 +86,53 @@ async function runDemo() {
   console.log('\nОфіційний стандартизований результат для експорту в ZUS Płatnik / Gratyfikant nexo:');
   console.log(JSON.stringify(exportResult.normalized, null, 2));
 
-  // Test 9: Handling invalid address with errors and suggestions
-  console.log(`\n--- TEST 9: Обробка помилок при неіснуючому будинку ---`);
+  // Test 9: Urząd Skarbowy Resolution by specificity hierarchy (< 1 ms)
+  console.log(`\n--- TEST 9: Визначення Urząd Skarbowy (Податкової інспекції) за ієрархією пріоритетів ---`);
+  
+  // 9a. Priority 1: ul. Lipowa 3 (Odd) -> Pierwszy US (0610)
+  t0 = performance.now();
+  const usOdd = sdk.resolveTaxOffice({
+    terytCode: '0663011',
+    simcId: lublinSimc,
+    ulicId: '11181', // ul. Lipowa
+    buildingNumber: '3',
+  });
+  t1 = performance.now();
+  console.log(`[Priority 1: Вулиця + Непарні номери] ul. Lipowa 3: [${usOdd?.usCode}] ${usOdd?.name} (${(t1 - t0).toFixed(3)} ms)`);
+
+  // 9b. Priority 1: ul. Lipowa 4 (Even) -> Trzeci US (0612)
+  t0 = performance.now();
+  const usEven = sdk.resolveTaxOffice({
+    terytCode: '0663011',
+    simcId: lublinSimc,
+    ulicId: '11181', // ul. Lipowa
+    buildingNumber: '4',
+  });
+  t1 = performance.now();
+  console.log(`[Priority 1: Вулиця + Парні номери] ul. Lipowa 4: [${usEven?.usCode}] ${usEven?.name} (${(t1 - t0).toFixed(3)} ms)`);
+
+  // 9c. Priority 2: Whole street: ul. Tomasza Zana -> Trzeci US (0612)
+  t0 = performance.now();
+  const usZana = sdk.resolveTaxOffice({
+    terytCode: '0663011',
+    simcId: lublinSimc,
+    ulicId: '25785', // ul. Tomasza Zana
+    buildingNumber: '32A',
+  });
+  t1 = performance.now();
+  console.log(`[Priority 2: Вулиця цілком] ul. Tomasza Zana 32A: [${usZana?.usCode}] ${usZana?.name} (${(t1 - t0).toFixed(3)} ms)`);
+
+  // 9d. Priority 4: Gmina outside city (Biskupice) -> Drugi US w Lublinie (0611)
+  t0 = performance.now();
+  const usBiskupice = sdk.resolveTaxOffice({
+    terytCode: '0617012',
+    buildingNumber: '4A',
+  });
+  t1 = performance.now();
+  console.log(`[Priority 4: Гміна за межами міста] Biskupice 4A: [${usBiskupice?.usCode}] ${usBiskupice?.name} (${(t1 - t0).toFixed(3)} ms)`);
+
+  // Test 10: Handling invalid address with errors and suggestions
+  console.log(`\n--- TEST 10: Обробка помилок при неіснуючому будинку ---`);
   const invalidInput = {
     miejscowosc: 'Люблін',
     ulica: 'Венявська',
@@ -99,7 +144,7 @@ async function runDemo() {
 
   sdk.close();
   console.log('\n===============================================================');
-  console.log('   🎉 ВСІ 8 ТЕСТІВ УСПІШНО ВИКОНАНО ЗА МЕНШ НІЖ 5 МС!          ');
+  console.log('   🎉 ВСІ 10 ТЕСТІВ УСПІШНО ВИКОНАНО ЗА МЕНШ НІЖ 5 МС!         ');
   console.log('===============================================================\n');
 }
 

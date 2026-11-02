@@ -93,9 +93,11 @@ open-pl-address/
 | `terc` | GUS Administrative Division | `teryt_code` (7 digits: WOJ+POW+GMI+RODZ) |
 | `cities` | Populated Places (SIMC) | `simc_id` (7 digits), `name`, `postal_codes` |
 | `streets` | Streets (ULIC) + Aggregated Buildings | `ulic_id` (5 digits), `cecha`, `buildings_map` |
-| `postal_code_index` | Inverted `XX-XXX` index | `postal_code`, `simc_id`, `street_id` |
+| `postal_code_index` | Inverted `XX-XXX` index | `postal_code`, `simcId`, `street_id` |
 | `cities_fts` | FTS5 Full-Text Search | Tokenized prefix search on normalized city names |
 | `streets_fts` | FTS5 Full-Text Search | Tokenized prefix search on normalized street names |
+| `tax_offices` | Official MF Polish Tax Offices | `us_code` (4 digits, e.g. "0610"), `name`, `city`, `street`, `postal_code` |
+| `tax_office_rules` | Territorial Jurisdiction Hierarchy | `us_code`, `teryt_code`, `simc_id`, `ulic_id`, `building_parity`, `priority` |
 
 ---
 
@@ -109,7 +111,8 @@ Both SDKs expose identical methods and return standardized models:
 | `searchCity(query, limit)` | Instant search with Cyrillic & diacritic tolerance | `Люблін` or `lodz` -> `Lublin`, `Łódź` |
 | `searchStreet(simcId, query, pna)` | City-scoped street autocomplete | `wieniaw` -> `ul. Wieniawska` |
 | `validateBuilding(simcId, ulicId, nr)` | Validate house existence and fetch exact postal code | `12` -> `exists: true, postalCode: 20-029` |
-| `validateAndFormatForExport(input)` | Standardized export for Gratyfikant nexo & Płatnik | Normalizes names, TERC codes, postal codes |
+| `resolveTaxOffice(params)` | Resolve official Urząd Skarbowy (< 1 ms) by specificity hierarchy | `terytCode: 0663011, ulicId: 24123` -> Pierwszy US w Lublinie (`0610`) |
+| `validateAndFormatForExport(input)` | Standardized export for Gratyfikant nexo, Płatnik & PIT | Normalizes names, TERC codes, postal codes & resolves Tax Office |
 
 ### Export Format for ZUS Płatnik & InsERT Gratyfikant nexo
 
@@ -131,7 +134,21 @@ Both SDKs expose identical methods and return standardized models:
     "nrDomu": "12",
     "nrLokalu": "4",
     "kodPocztowy": "20-029",
-    "poczta": "Lublin"
+    "poczta": "Lublin",
+    "taxOffice": {
+      "usCode": "0610",
+      "name": "Pierwszy Urząd Skarbowy w Lublinie",
+      "city": "Lublin",
+      "street": "ul. Sądowa 5",
+      "postalCode": "20-027"
+    }
+  },
+  "taxOffice": {
+    "usCode": "0610",
+    "name": "Pierwszy Urząd Skarbowy w Lublinie",
+    "city": "Lublin",
+    "street": "ul. Sądowa 5",
+    "postalCode": "20-027"
   }
 }
 ```

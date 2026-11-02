@@ -73,6 +73,12 @@ async function main() {
         console.log('\n📋 Стандартизований вигляд для ZUS Płatnik / Gratyfikant nexo:');
         console.log(JSON.stringify(res.normalized, null, 2));
       }
+      if (res.taxOffice) {
+        console.log(`\n🏛️ Urząd Skarbowy (PIT-11): [${res.taxOffice.usCode}] ${res.taxOffice.name}`);
+        if (res.taxOffice.city && res.taxOffice.street) {
+          console.log(`   Адреса інспекції: ${res.taxOffice.postalCode ?? ''} ${res.taxOffice.city}, ${res.taxOffice.street}`);
+        }
+      }
 
       const cont = await question('\nБажаєте перевірити ще одну адресу? (Y/n): ');
       if (cont.toLowerCase().startsWith('n')) break;
