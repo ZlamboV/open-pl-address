@@ -39,7 +39,7 @@
     "directory": "packages/mcp-server"
   },
   "dependencies": {
-    "open-pl-address": "*"
+    "open-pl-address": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
