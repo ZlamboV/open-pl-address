@@ -76,7 +76,7 @@ export const SEED_CITIES: SeedCity[] = [
     simcId: '0954995',
     terytCode: '0663011',
     name: 'Lublin',
-    postalCodes: ['20-001', '20-002', '20-020', '20-024', '20-029', '20-059', '20-071', '20-074', '20-076', '20-080', '20-601'],
+    postalCodes: ['20-001', '20-002', '20-020', '20-024', '20-029', '20-059', '20-071', '20-074', '20-076', '20-080', '20-601', '20-711'],
   },
   {
     simcId: '0379114',
@@ -100,7 +100,7 @@ export const SEED_CITIES: SeedCity[] = [
     simcId: '0957650',
     terytCode: '1061011',
     name: 'Łódź',
-    postalCodes: ['90-001', '90-006', '90-418'],
+    postalCodes: ['90-001', '90-006', '90-418', '91-604'],
   },
   {
     simcId: '0986283',
@@ -176,6 +176,15 @@ export const SEED_STREETS: SeedStreet[] = [
     name: 'Tomasza Zana',
     buildingsMap: {
       '20-601': ['1', '2', '3', '11', '15', '19', '32A', '38', '43'],
+    },
+  },
+  {
+    simcId: '0954995',
+    ulicId: '08179',
+    cecha: 'ul.',
+    name: 'Kasztelańska',
+    buildingsMap: {
+      '20-711': ['1', '5', '10', '25', '29', '31'],
     },
   },
 
@@ -260,6 +269,15 @@ export const SEED_STREETS: SeedStreet[] = [
       '90-418': ['100', '102', '104', '150'],
     },
   },
+  {
+    simcId: '0957650',
+    ulicId: '00130',
+    cecha: 'ul.',
+    name: 'Ametystowa',
+    buildingsMap: {
+      '91-604': ['1', '2', '3', '4', '5'],
+    },
+  },
 ];
 
 export interface SeedTaxOffice {
@@ -326,6 +344,13 @@ export const SEED_TAX_OFFICES: SeedTaxOffice[] = [
   },
 
   // --- ŁÓDŹ ---
+  {
+    usCode: '1008',
+    name: 'Pierwszy Urząd Skarbowy Łódź-Bałuty',
+    city: 'Łódź',
+    street: 'ul. Zachodnia 47',
+    postalCode: '91-066',
+  },
   {
     usCode: '1013',
     name: 'Urząd Skarbowy Łódź-Śródmieście',
@@ -425,6 +450,16 @@ export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
     buildingTo: null,
     priority: 2,
   },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '08179', // ul. Kasztelańska
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
 
   // Southern and western streets -> Trzeci US w Lublinie (0612)
   {
@@ -502,7 +537,17 @@ export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
     priority: 3,
   },
   {
-    usCode: '1013', // Łódź-Śródmieście
+    usCode: '1008', // Łódź-Bałuty (ul. Ametystowa)
+    terytCode: '1061011',
+    simcId: '0957650',
+    ulicId: '00130',
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '1013', // Łódź-Śródmieście (city default)
     terytCode: '1061011',
     simcId: '0957650',
     ulicId: null,

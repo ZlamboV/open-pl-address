@@ -1,18 +1,18 @@
 {
   "version": "2026.44.0",
-  "builtAt": "2026-11-02T11:02:43.279Z",
+  "builtAt": "2026-11-02T11:12:38.834Z",
   "databaseFile": "pl_addresses.sqlite",
   "compressedFile": "pl_addresses.sqlite.gz",
-  "sha256": "8baad2fa6e87af91ab76bc969eba0f46d01635b6b0d6e47871dff123c478d9c5",
-  "sha256Compressed": "c48b7aa1d880226c488f0aaa6575c9a6c6f2d031ce16323398dc9dd06b49707c",
+  "sha256": "820b1e3d04d25cc4a9f5538b7ff925c5e7d6c2d3fcf95943bfd7f1a5d3f7f354",
+  "sha256Compressed": "8d69f86ddb8484af59efdb91c5ecddd23009487000530fc3e65dedb42e3d998b",
   "uncompressedSizeBytes": 159744,
-  "compressedSizeBytes": 9764,
+  "compressedSizeBytes": 10212,
   "counts": {
     "terc": 6,
     "cities": 6,
-    "streets": 15,
-    "postalCodes": 28,
-    "taxOffices": 7,
-    "taxOfficeRules": 15
+    "streets": 17,
+    "postalCodes": 30,
+    "taxOffices": 8,
+    "taxOfficeRules": 17
   }
 }
