@@ -28,7 +28,18 @@ test('PolishAddressSDK - full end-to-end facade lifecycle', async () => {
   assert.strictEqual(bld.exists, true);
   assert.strictEqual(bld.postalCode, '20-029');
 
-  // 5. validateAndFormatForExport
+  // 5. resolveTaxOffice
+  const us = sdk.resolveTaxOffice({
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '24123',
+    buildingNumber: '12',
+  });
+  assert.ok(us);
+  assert.strictEqual(us.usCode, '0610');
+  assert.strictEqual(us.name, 'Pierwszy Urząd Skarbowy w Lublinie');
+
+  // 6. validateAndFormatForExport
   const exp = sdk.validateAndFormatForExport({
     miejscowosc: 'Lublin',
     ulica: 'Wieniawska',
@@ -38,6 +49,8 @@ test('PolishAddressSDK - full end-to-end facade lifecycle', async () => {
   assert.strictEqual(exp.isValid, true);
   assert.strictEqual(exp.normalized?.kodPocztowy, '20-029');
   assert.strictEqual(exp.normalized?.nrLokalu, '2A');
+  assert.strictEqual(exp.taxOffice?.usCode, '0610');
+  assert.strictEqual(exp.normalized?.taxOffice?.usCode, '0610');
 
   sdk.close();
 });

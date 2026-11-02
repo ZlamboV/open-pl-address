@@ -7,6 +7,7 @@ import {
   normalizePostalCode,
   isValidPostalCode,
   normalizeBuildingNumber,
+  extractBuildingNumericPart,
 } from '../src/normalizer.ts';
 
 test('TextNormalizer - Polish diacritics stripping', () => {
@@ -52,4 +53,16 @@ test('TextNormalizer - Building number normalization', () => {
   assert.strictEqual(normalizeBuildingNumber('16 m. 4'), '16');
   assert.strictEqual(normalizeBuildingNumber('32A'), '32A');
   assert.strictEqual(normalizeBuildingNumber('84/92'), '84');
+});
+
+test('TextNormalizer - extractBuildingNumericPart', () => {
+  assert.strictEqual(extractBuildingNumericPart('12'), 12);
+  assert.strictEqual(extractBuildingNumericPart('12A'), 12);
+  assert.strictEqual(extractBuildingNumericPart('  15/17  '), 15);
+  assert.strictEqual(extractBuildingNumericPart('84/92'), 84);
+  assert.strictEqual(extractBuildingNumericPart('4A'), 4);
+  assert.strictEqual(extractBuildingNumericPart(''), null);
+  assert.strictEqual(extractBuildingNumericPart(null), null);
+  assert.strictEqual(extractBuildingNumericPart(undefined), null);
+  assert.strictEqual(extractBuildingNumericPart('ABC'), null);
 });
