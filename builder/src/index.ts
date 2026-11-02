@@ -2,6 +2,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 import { AddressDatabaseBuilder } from './db_builder.ts';
 import { downloadFile, OFFICIAL_DATA_SOURCES } from './downloaders/prg_teryt_fetcher.ts';
 import { parsePrgCsvStream } from './parsers/prg_stream.ts';
@@ -9,7 +10,117 @@ import { parsePrgCsvStream } from './parsers/prg_stream.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function main() {
+/**
+ * Recursively unpacks all .zip archives in targetDir until only leaf files remain.
+ * Intermediate .zip archives are removed after extraction to conserve disk space and prevent re-processing.
+ *
+ * @param targetDir Directory containing downloaded archives
+ * @param maxPasses Maximum number of recursive extraction passes (default: 5)
+ */
+export function extractArchivesRecursively(targetDir: string, maxPasses = 5): void {
+  let pass = 0;
+  while (pass < maxPasses) {
+    pass++;
+    const zipFiles: string[] = [];
+
+    function findZips(dir: string): void {
+      if (!fs.existsSync(dir)) return;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          findZips(full);
+        } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.zip')) {
+          zipFiles.push(full);
+        }
+      }
+    }
+
+    findZips(targetDir);
+
+    if (zipFiles.length === 0) break;
+
+    console.log(`[Full Pipeline] Extracting ${zipFiles.length} archive(s) (pass ${pass})...`);
+    for (const zipFile of zipFiles) {
+      const destDir = path.dirname(zipFile);
+      try {
+        execSync(`unzip -q -o "${zipFile}" -d "${destDir}"`, { stdio: 'inherit' });
+        // Remove nested archive after successful unpack to save disk space and avoid reprocessing
+        fs.unlinkSync(zipFile);
+      } catch (err: any) {
+        console.warn(`[Warning] Failed to unpack archive ${zipFile}: ${err.message}`);
+        try {
+          fs.renameSync(zipFile, `${zipFile}.corrupted`);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Discovers all PRG address data files (.csv and .txt), filtering out metadata/documentation.
+ * Sniffs the header (first 4KB) of each candidate file to verify presence of PRG address columns.
+ *
+ * @param dir Directory to search for PRG address files
+ * @returns Array of absolute paths to valid address data files
+ */
+export function findAddressFiles(dir: string): string[] {
+  const results: string[] = [];
+  if (!fs.existsSync(dir)) return results;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...findAddressFiles(full));
+    } else if (entry.isFile()) {
+      const lower = entry.name.toLowerCase();
+      if (lower.endsWith('.csv') || lower.endsWith('.txt')) {
+        // Ignore common non-data documentation files
+        if (
+          lower.startsWith('readme') ||
+          lower.startsWith('opis') ||
+          lower.startsWith('licen') ||
+          lower.startsWith('metadan') ||
+          lower.startsWith('wykaz') ||
+          lower.startsWith('struktura')
+        ) {
+          continue;
+        }
+
+        // Quick header validation (sniff first 4KB to confirm presence of PRG address columns)
+        try {
+          const fd = fs.openSync(full, 'r');
+          const buffer = Buffer.alloc(4096);
+          const bytesRead = fs.readSync(fd, buffer, 0, 4096, 0);
+          fs.closeSync(fd);
+          const headerLine = buffer.toString('utf-8', 0, bytesRead).split(/\r?\n/)[0].toUpperCase();
+          const hasSimcOrCity =
+            headerLine.includes('SIMC') ||
+            headerLine.includes('MIEJSC') ||
+            headerLine.includes('SYM');
+          const hasBuildingOrPna =
+            headerLine.includes('NUMER') ||
+            headerLine.includes('NR') ||
+            headerLine.includes('PNA') ||
+            headerLine.includes('KOD');
+
+          if (hasSimcOrCity && hasBuildingOrPna) {
+            results.push(full);
+          }
+        } catch {
+          // If read fails, fallback to filename check
+          results.push(full);
+        }
+      }
+    }
+  }
+  return results;
+}
+
+export async function main() {
   const args = process.argv.slice(2);
   const isSeed = args.includes('--seed') || !args.includes('--full');
   const isFull = args.includes('--full');
@@ -79,47 +190,51 @@ async function main() {
       return;
     }
 
-    // In full mode with unpacked PRG CSV:
-    console.log('[Full Pipeline] Extracting archive...');
+    // In full mode with unpacked PRG archives:
+    console.log('[Full Pipeline] Extracting archive and nested voivodeship packages...');
+    const extractedDir = path.join(cacheDir, 'prg_extracted');
+    if (!fs.existsSync(extractedDir)) {
+      fs.mkdirSync(extractedDir, { recursive: true });
+    }
+
+    // Unpack top-level PRG archive into extractedDir
     try {
-      const { execSync } = await import('node:child_process');
-      execSync(`unzip -q -o "${prgZipPath}" -d "${cacheDir}"`, { stdio: 'inherit' });
+      execSync(`unzip -q -o "${prgZipPath}" -d "${extractedDir}"`, { stdio: 'inherit' });
     } catch (unzipErr: any) {
-      console.warn(`[Warning] unzip command failed (${unzipErr.message}).`);
+      console.warn(`[Warning] Top-level unzip failed (${unzipErr.message}).`);
     }
 
-    function findCsvFiles(dir: string): string[] {
-      const results: string[] = [];
-      if (!fs.existsSync(dir)) return results;
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          results.push(...findCsvFiles(full));
-        } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.csv')) {
-          results.push(full);
-        }
-      }
-      return results;
+    // Recursively extract all nested voivodeship archives and remove intermediate zips
+    extractArchivesRecursively(extractedDir);
+
+    let dataFiles = findAddressFiles(extractedDir);
+    if (dataFiles.length === 0) {
+      dataFiles = findAddressFiles(cacheDir);
     }
 
-    const csvFiles = findCsvFiles(cacheDir);
-    if (csvFiles.length > 0) {
-      console.log(`[Full Pipeline] Found ${csvFiles.length} CSV file(s) to process:`, csvFiles.map((f) => path.basename(f)));
-      const manifest = await builder.buildFullDatabase(csvFiles, version);
+    if (dataFiles.length > 0) {
+      console.log(`[Full Pipeline] Found ${dataFiles.length} address file(s) to process:`, dataFiles.map((f) => path.basename(f)));
+      const manifest = await builder.buildFullDatabase(dataFiles, version);
       console.log('\n--- Full Build Complete ---');
       console.log(`Version:    ${manifest.version}`);
       console.log(`Size (raw): ${(manifest.uncompressedSizeBytes / 1024 / 1024).toFixed(1)} MB`);
       console.log(`Size (gz):  ${(manifest.compressedSizeBytes / 1024 / 1024).toFixed(1)} MB`);
       console.log(`Records:    TERC=${manifest.counts.terc}, Cities=${manifest.counts.cities}, Streets=${manifest.counts.streets}, PostalCodes=${manifest.counts.postalCodes}`);
     } else {
-      console.log('No PRG CSV files found in cache, using seed data fallback.');
+      console.log('No valid PRG CSV/TXT files found in cache, using seed data fallback.');
       await builder.buildSeedDatabase(version);
     }
   }
 }
 
-main().catch((err) => {
-  console.error('[Builder Error]:', err);
-  process.exit(1);
-});
+const isDirectExecution =
+  process.argv[1] &&
+  (path.resolve(process.argv[1]) === __filename || process.argv[1].endsWith('builder/src/index.ts')) &&
+  !process.env.TEST_IMPORT_ONLY;
+
+if (isDirectExecution) {
+  main().catch((err) => {
+    console.error('[Builder Error]:', err);
+    process.exit(1);
+  });
+}
