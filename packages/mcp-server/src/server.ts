@@ -1,5 +1,5 @@
 import * as readline from 'node:readline';
-import { PolishAddressSDK } from '../../ts-sdk/src/index.ts';
+import { PolishAddressSDK } from 'open-pl-address';
 import { TOOLS, executeTool } from './tools.ts';
 
 interface JsonRpcRequest {

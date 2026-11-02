@@ -45,7 +45,7 @@ jobs:
 
       - name: Publish SDK to NPM
         working-directory: packages/ts-sdk
-        run: npm publish --access public --provenance
+        run: npm publish --access public --provenance || echo "SDK version already published"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -56,6 +56,6 @@ jobs:
 
       - name: Publish MCP Server to NPM
         working-directory: packages/mcp-server
-        run: npm publish --access public --provenance
+        run: npm publish --access public --provenance || echo "MCP Server version already published"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

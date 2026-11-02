@@ -1,4 +1,4 @@
-import type { PolishAddressSDK } from '../../ts-sdk/src/index.ts';
+import type { PolishAddressSDK } from 'open-pl-address';
 
 export interface ToolDefinition {
   name: string;

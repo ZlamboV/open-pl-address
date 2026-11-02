@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import * as path from 'node:path';
-import { PolishAddressSDK } from '../../ts-sdk/src/index.ts';
+import { PolishAddressSDK } from 'open-pl-address';
 import { McpServer } from '../src/server.ts';
 import { TOOLS, executeTool } from '../src/tools.ts';
 
