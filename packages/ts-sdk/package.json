@@ -1,10 +1,23 @@
 {
   "name": "open-pl-address",
   "version": "1.0.0",
-  "description": "Universal Polish Address Embedded SDK (TERYT + PRG) for Node.js, Telegram bots, and ERP integrations",
+  "description": "Universal Polish Address Embedded SDK (TERYT + PRG + Tax Offices) for Node.js, Telegram bots, and ERP integrations",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --experimental-strip-types --test tests/**/*.test.ts",
     "build": "tsc"
@@ -15,15 +28,30 @@
     "gus",
     "gugik",
     "poland",
-    "address",
+    "polish-address",
+    "address-validation",
+    "urzad-skarbowy",
+    "pit-11",
     "postal-code",
     "zus-platnik",
     "gratyfikant-nexo",
     "sqlite",
     "fts5"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pl-address/open-pl-address.git",
+    "directory": "packages/ts-sdk"
+  },
+  "homepage": "https://github.com/open-pl-address/open-pl-address#readme",
+  "bugs": {
+    "url": "https://github.com/open-pl-address/open-pl-address/issues"
+  },
   "author": "open-pl-address contributors",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "better-sqlite3": "^9.0.0 || ^10.0.0 || ^11.0.0"
   },

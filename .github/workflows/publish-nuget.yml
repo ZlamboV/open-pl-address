@@ -1,0 +1,48 @@
+name: Publish NuGet Package
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional version override (e.g. 1.0.0)'
+        required: false
+
+jobs:
+  publish-nuget:
+    name: Build, Pack, and Publish to NuGet
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore packages/csharp-sdk/OpenPlAddress.sln
+
+      - name: Build Solution
+        run: dotnet build packages/csharp-sdk/OpenPlAddress.sln -c Release --no-restore
+
+      - name: Run Tests
+        run: dotnet test packages/csharp-sdk/OpenPlAddress.sln -c Release --no-build --verbosity normal
+
+      - name: Pack NuGet Package
+        run: |
+          dotnet pack packages/csharp-sdk/OpenPlAddress.Sdk/OpenPlAddress.Sdk.csproj \
+            -c Release \
+            --no-build \
+            -o ./nupkg
+
+      - name: Push to NuGet.org
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

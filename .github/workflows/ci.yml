@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-ts:
+    name: Test TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Verify Seed Database & Run TS Tests
+        run: |
+          test -f data/pl_addresses.sqlite || npm run build:seed
+          npm test
+
+      - name: Build TypeScript SDK
+        run: |
+          cd packages/ts-sdk
+          npm run build
+
+  test-csharp:
+    name: Test C# SDK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore packages/csharp-sdk/OpenPlAddress.sln
+
+      - name: Build Solution
+        run: dotnet build packages/csharp-sdk/OpenPlAddress.sln -c Release --no-restore
+
+      - name: Run Tests
+        run: dotnet test packages/csharp-sdk/OpenPlAddress.sln -c Release --no-build --verbosity normal

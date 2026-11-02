@@ -8,6 +8,30 @@ import { pipeline } from 'node:stream/promises';
 import type { DatabaseManifest, ISqliteDatabase, SDKConfig } from './types.ts';
 import { createSqliteAdapter } from './db-adapter.ts';
 
+function resolveDefaultDbPath(explicitPath?: string): string {
+  if (explicitPath) {
+    return path.resolve(process.cwd(), explicitPath);
+  }
+  if (process.env.OPEN_PL_ADDRESS_DB_PATH) {
+    return path.resolve(process.cwd(), process.env.OPEN_PL_ADDRESS_DB_PATH);
+  }
+  const cwdPath = path.resolve(process.cwd(), './data/pl_addresses.sqlite');
+  if (fs.existsSync(cwdPath)) {
+    return cwdPath;
+  }
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i++) {
+    const candidate = path.resolve(dir, 'data/pl_addresses.sqlite');
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return cwdPath;
+}
+
 export class AddressDatabaseManager {
   private config: Required<Pick<SDKConfig, 'dbPath' | 'autoUpdateDays' | 'autoDownloadOnMissing'>> & { updateUrl?: string };
   private activeDb: ISqliteDatabase | null = null;
@@ -16,8 +40,8 @@ export class AddressDatabaseManager {
 
   constructor(config: SDKConfig = {}) {
     this.config = {
-      dbPath: path.resolve(process.cwd(), config.dbPath ?? './data/pl_addresses.sqlite'),
-      updateUrl: config.updateUrl,
+      dbPath: resolveDefaultDbPath(config.dbPath),
+      updateUrl: config.updateUrl ?? 'https://github.com/open-pl-address/open-pl-address/releases/latest/download',
       autoUpdateDays: config.autoUpdateDays ?? 7,
       autoDownloadOnMissing: config.autoDownloadOnMissing ?? true,
     };

@@ -80,7 +80,7 @@ jobs:
             
             - **Version:** `${{ steps.vars.outputs.version }}`
             - **Built:** `${{ steps.vars.outputs.version }}`
-            - **Data Sources:** GUS TERYT (TERC, SIMC, ULIC) + GUGiK PRG (Punkty Adresowe)
+            - **Data Sources:** GUS TERYT (TERC, SIMC, ULIC) + GUGiK PRG (Punkty Adresowe) + MF CRD (Urząd Skarbowy & Territorial Jurisdiction)
             
             #### Checksums:
             - **pl_addresses.sqlite (Raw SHA256):** `${{ steps.vars.outputs.sha256 }}`

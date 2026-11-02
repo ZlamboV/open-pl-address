@@ -14,7 +14,8 @@
     "demo": "node --experimental-strip-types examples/interactive_demo.ts",
     "cli": "node --experimental-strip-types examples/cli.ts",
     "test:ts": "node --experimental-strip-types --test packages/ts-sdk/tests/**/*.test.ts",
-    "test": "npm run test:ts"
+    "test:mcp": "node --experimental-strip-types --test packages/mcp-server/tests/**/*.test.ts",
+    "test": "npm run test:ts && npm run test:mcp"
   },
   "keywords": [
     "teryt",

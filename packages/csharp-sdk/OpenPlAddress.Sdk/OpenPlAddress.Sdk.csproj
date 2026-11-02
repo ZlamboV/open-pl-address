@@ -7,15 +7,25 @@
     <PackageId>OpenPlAddress.Sdk</PackageId>
     <Version>1.0.0</Version>
     <Authors>open-pl-address contributors</Authors>
-    <Description>Embedded Polish Address SDK (TERYT + PRG) for InsERT Gratyfikant nexo, ZUS Platnik, and .NET applications</Description>
-    <PackageTags>teryt;prg;poland;address;platnik;gratyfikant;nexo;sqlite</PackageTags>
+    <Description>Embedded Polish Address SDK (TERYT + PRG + Tax Offices) for InsERT Gratyfikant nexo, ZUS Płatnik, and .NET applications</Description>
+    <PackageTags>teryt;prg;poland;address;platnik;gratyfikant;nexo;sqlite;urzad-skarbowy;pit11</PackageTags>
     <RepositoryUrl>https://github.com/open-pl-address/open-pl-address</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/open-pl-address/open-pl-address</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>Universal Polish Address Database &amp; Embedded SDK with sub-millisecond local SQLite search, Cyrillic transliteration, and Urząd Skarbowy (Tax Office) detection for ZUS Płatnik and InsERT Gratyfikant nexo.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\LICENSE" Pack="true" PackagePath="\" Link="LICENSE" />
   </ItemGroup>
 
 </Project>

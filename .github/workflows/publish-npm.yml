@@ -1,0 +1,51 @@
+name: Publish NPM Package
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag / release version (e.g. v1.0.0)'
+        required: false
+
+jobs:
+  publish-npm:
+    name: Build and Publish to NPM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run Test Suite
+        run: |
+          test -f data/pl_addresses.sqlite || npm run build:seed
+          npm test
+
+      - name: Build TypeScript SDK
+        run: |
+          cd packages/ts-sdk
+          npm run build
+
+      - name: Publish to NPM
+        working-directory: packages/ts-sdk
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
