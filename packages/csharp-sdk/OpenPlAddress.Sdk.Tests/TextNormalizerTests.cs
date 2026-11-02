@@ -46,5 +46,17 @@ namespace OpenPlAddress.Sdk.Tests
             Assert.Equal("14", TextNormalizer.NormalizeBuildingNumber("14 / 2"));
             Assert.Equal("16", TextNormalizer.NormalizeBuildingNumber("16 m. 4"));
         }
+
+        [Fact]
+        public void ExtractBuildingNumericPart_ParsesLeadingIntegers()
+        {
+            Assert.Equal(12, TextNormalizer.ExtractBuildingNumericPart("12"));
+            Assert.Equal(12, TextNormalizer.ExtractBuildingNumericPart("12A"));
+            Assert.Equal(15, TextNormalizer.ExtractBuildingNumericPart("  15/17  "));
+            Assert.Equal(4, TextNormalizer.ExtractBuildingNumericPart("4A"));
+            Assert.Null(TextNormalizer.ExtractBuildingNumericPart(""));
+            Assert.Null(TextNormalizer.ExtractBuildingNumericPart(null));
+            Assert.Null(TextNormalizer.ExtractBuildingNumericPart("XYZ"));
+        }
     }
 }

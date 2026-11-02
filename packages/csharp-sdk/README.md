@@ -88,6 +88,13 @@ if (validation.IsValid && validation.Normalized != null)
     // podmiot.AdresPodstawowy.Szczegoly.Powiat = addr.Powiat;
     // podmiot.AdresPodstawowy.Szczegoly.Wojewodztwo = addr.Wojewodztwo;
     // podmiot.AdresPodstawowy.Szczegoly.KodGminyGUS = addr.TerytGminaCode; // 7-digit code for ZUS Platnik
+
+    // Urząd Skarbowy for employee tax file & PIT-11 / PIT-37 declarations:
+    if (addr.TaxOffice != null)
+    {
+        Console.WriteLine($"Urząd Skarbowy: [{addr.TaxOffice.UsCode}] {addr.TaxOffice.Name}");
+        // pracownik.UrzadSkarbowy = addr.TaxOffice.UsCode; // e.g. "0610"
+    }
 }
 else
 {
@@ -96,6 +103,20 @@ else
         Console.WriteLine($"Validation Error: {error}");
     }
 }
+```
+
+### 4. Direct Urząd Skarbowy (Tax Office) Resolution (&lt; 1 ms)
+
+```csharp
+var taxOffice = sdk.ResolveTaxOffice(new TaxOfficeResolutionInput
+{
+    TerytCode = "0663011",
+    SimcId = "0954995",
+    UlicId = "11181", // ul. Lipowa
+    BuildingNumber = "3" // Priority 1: Odd -> Pierwszy US (0610), Even -> Trzeci US (0612)
+});
+
+Console.WriteLine($"US Code: {taxOffice?.UsCode}, Name: {taxOffice?.Name}");
 ```
 
 ---
