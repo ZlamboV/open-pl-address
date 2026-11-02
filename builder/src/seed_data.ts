@@ -261,3 +261,264 @@ export const SEED_STREETS: SeedStreet[] = [
     },
   },
 ];
+
+export interface SeedTaxOffice {
+  usCode: string; // 4-digit MF code
+  name: string; // Official name
+  city: string;
+  street: string;
+  postalCode: string;
+}
+
+export type BuildingParity = 'ALL' | 'EVEN' | 'ODD';
+
+export interface SeedTaxOfficeRule {
+  usCode: string;
+  terytCode: string;
+  simcId: string | null;
+  ulicId: string | null;
+  buildingParity: BuildingParity;
+  buildingFrom: number | null;
+  buildingTo: number | null;
+  priority: number; // 1: street + range/parity, 2: whole street, 3: city, 4: gmina
+}
+
+export const SEED_TAX_OFFICES: SeedTaxOffice[] = [
+  // --- LUBLIN & POWIAT LUBELSKI ---
+  {
+    usCode: '0610',
+    name: 'Pierwszy Urząd Skarbowy w Lublinie',
+    city: 'Lublin',
+    street: 'ul. Sądowa 5',
+    postalCode: '20-027',
+  },
+  {
+    usCode: '0611',
+    name: 'Drugi Urząd Skarbowy w Lublinie',
+    city: 'Lublin',
+    street: 'ul. Fabryczna 1a',
+    postalCode: '20-301',
+  },
+  {
+    usCode: '0612',
+    name: 'Trzeci Urząd Skarbowy w Lublinie',
+    city: 'Lublin',
+    street: 'ul. Narutowicza 56',
+    postalCode: '20-016',
+  },
+
+  // --- WARSZAWA ---
+  {
+    usCode: '1435',
+    name: 'Pierwszy Urząd Skarbowy Warszawa-Śródmieście',
+    city: 'Warszawa',
+    street: 'ul. Lindleya 14',
+    postalCode: '02-013',
+  },
+
+  // --- KRAKÓW ---
+  {
+    usCode: '1212',
+    name: 'Urząd Skarbowy Kraków-Stare Miasto',
+    city: 'Kraków',
+    street: 'ul. Grodzka 65',
+    postalCode: '31-001',
+  },
+
+  // --- ŁÓDŹ ---
+  {
+    usCode: '1013',
+    name: 'Urząd Skarbowy Łódź-Śródmieście',
+    city: 'Łódź',
+    street: 'ul. Dowborczyków 9/11',
+    postalCode: '90-019',
+  },
+
+  // --- WROCŁAW ---
+  {
+    usCode: '0227',
+    name: 'Urząd Skarbowy Wrocław-Stare Miasto',
+    city: 'Wrocław',
+    street: 'ul. Piłsudskiego 27/29',
+    postalCode: '50-044',
+  },
+];
+
+export const SEED_TAX_OFFICE_RULES: SeedTaxOfficeRule[] = [
+  // =========================================================================
+  // LUBLIN (TERC: 0663011, SIMC: 0954995)
+  // Division between Pierwszy US (0610), Trzeci US (0612), and Drugi US (0611)
+  // =========================================================================
+
+  // --- PRIORITY 1: Street + building range / parity rules ---
+  // ul. Lipowa (ulicId: 24123): Odd numbers belong to Pierwszy US (0610), Even numbers belong to Trzeci US (0612)
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '11181', // ul. Lipowa
+    buildingParity: 'ODD',
+    buildingFrom: 1,
+    buildingTo: 11,
+    priority: 1,
+  },
+  {
+    usCode: '0612',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '11181', // ul. Lipowa
+    buildingParity: 'EVEN',
+    buildingFrom: 2,
+    buildingTo: 16,
+    priority: 1,
+  },
+
+  // --- PRIORITY 2: Whole street rules ---
+  // Northern and central streets -> Pierwszy US w Lublinie (0610)
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '24123', // ul. Wieniawska
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '09895', // ul. Krakowskie Przedmieście
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '20743', // ul. Spokojna
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '18285', // al. Racławickie
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '11244', // pl. Litewski
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+
+  // Southern and western streets -> Trzeci US w Lublinie (0612)
+  {
+    usCode: '0612',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: '25785', // ul. Tomasza Zana
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 2,
+  },
+
+  // --- PRIORITY 3: City fallback ---
+  // Default for Lublin city when no specific street rule matches -> 0610 (Pierwszy US)
+  {
+    usCode: '0610',
+    terytCode: '0663011',
+    simcId: '0954995',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+
+  // =========================================================================
+  // POWIAT LUBELSKI & OUTSIDE GMINAS -> Drugi US w Lublinie (0611)
+  // =========================================================================
+  // --- PRIORITY 4: Gmina / Powiat rules ---
+  // Biskupice (gmina świdnicka / lubelska border) -> Drugi US w Lublinie (0611)
+  {
+    usCode: '0611',
+    terytCode: '0617012',
+    simcId: null,
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 4,
+  },
+  // Powiat lubelski outer gminas prefix (0609)
+  {
+    usCode: '0611',
+    terytCode: '0609',
+    simcId: null,
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 4,
+  },
+
+  // =========================================================================
+  // OTHER SEED CITIES (Warszawa, Kraków, Łódź, Wrocław)
+  // =========================================================================
+  {
+    usCode: '1435', // Warszawa-Śródmieście
+    terytCode: '1465011',
+    simcId: '0918123',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+  {
+    usCode: '1212', // Kraków-Stare Miasto
+    terytCode: '1261011',
+    simcId: '0950463',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+  {
+    usCode: '1013', // Łódź-Śródmieście
+    terytCode: '1061011',
+    simcId: '0957650',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+  {
+    usCode: '0227', // Wrocław-Stare Miasto
+    terytCode: '0264011',
+    simcId: '0986283',
+    ulicId: null,
+    buildingParity: 'ALL',
+    buildingFrom: null,
+    buildingTo: null,
+    priority: 3,
+  },
+];
