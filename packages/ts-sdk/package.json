@@ -1,0 +1,39 @@
+{
+  "name": "open-pl-address",
+  "version": "1.0.0",
+  "description": "Universal Polish Address Embedded SDK (TERYT + PRG) for Node.js, Telegram bots, and ERP integrations",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts",
+    "build": "tsc"
+  },
+  "keywords": [
+    "teryt",
+    "prg",
+    "gus",
+    "gugik",
+    "poland",
+    "address",
+    "postal-code",
+    "zus-platnik",
+    "gratyfikant-nexo",
+    "sqlite",
+    "fts5"
+  ],
+  "author": "open-pl-address contributors",
+  "license": "MIT",
+  "peerDependencies": {
+    "better-sqlite3": "^9.0.0 || ^10.0.0 || ^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

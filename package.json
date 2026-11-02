@@ -1,0 +1,30 @@
+{
+  "name": "open-pl-address-monorepo",
+  "version": "1.0.0",
+  "description": "Universal Polish Address Database & Embedded SDK (TERYT + PRG) for ZUS Platnik and Gratyfikant nexo",
+  "private": true,
+  "workspaces": [
+    "builder",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:seed": "node --experimental-strip-types builder/src/index.ts --seed",
+    "build:full": "node --experimental-strip-types builder/src/index.ts --full",
+    "test:ts": "node --experimental-strip-types --test packages/ts-sdk/tests/**/*.test.ts",
+    "test": "npm run test:ts"
+  },
+  "keywords": [
+    "teryt",
+    "prg",
+    "gus",
+    "gugik",
+    "poland",
+    "address",
+    "platnik",
+    "gratyfikant",
+    "sqlite",
+    "fts5"
+  ],
+  "author": "open-pl-address contributors",
+  "license": "MIT"
+}

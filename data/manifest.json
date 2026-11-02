@@ -1,0 +1,16 @@
+{
+  "version": "2026.44.0",
+  "builtAt": "2026-11-02T10:02:37.019Z",
+  "databaseFile": "pl_addresses.sqlite",
+  "compressedFile": "pl_addresses.sqlite.gz",
+  "sha256": "6b6888caed6835d22c7834154130661e11c98c3bd7bf210801acbbb81b8a9d51",
+  "sha256Compressed": "0bad8a574db0fe8cbf1042e507c7ce4e917a1a8c91521e91c01490df812b84d9",
+  "uncompressedSizeBytes": 135168,
+  "compressedSizeBytes": 8131,
+  "counts": {
+    "terc": 6,
+    "cities": 6,
+    "streets": 15,
+    "postalCodes": 28
+  }
+}

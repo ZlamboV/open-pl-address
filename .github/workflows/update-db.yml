@@ -1,0 +1,95 @@
+name: Weekly Polish Address Database Update & Release
+
+on:
+  schedule:
+    # Runs every Monday at 03:00 UTC
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type: full (All Poland) or seed (Demo cities)'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - seed
+
+jobs:
+  build-and-release:
+    name: Build Database & Publish Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Generate Database
+        run: |
+          BUILD_MODE="${{ github.event.inputs.build_type || 'full' }}"
+          echo "Executing database build in mode: $BUILD_MODE"
+          if [ "$BUILD_MODE" = "full" ]; then
+            npm run build:full
+          else
+            npm run build:seed
+          fi
+
+      - name: Verify Database Integrity
+        run: |
+          ls -lh data/
+          test -f data/pl_addresses.sqlite
+          test -f data/pl_addresses.sqlite.gz
+          test -f data/manifest.json
+          npm run test:ts
+
+      - name: Compute Release Tag & Info
+        id: vars
+        run: |
+          VERSION=$(node -e "console.log(JSON.parse(fs.readFileSync('data/manifest.json', 'utf8')).version)")
+          SHA256=$(node -e "console.log(JSON.parse(fs.readFileSync('data/manifest.json', 'utf8')).sha256)")
+          GZ_SHA256=$(node -e "console.log(JSON.parse(fs.readFileSync('data/manifest.json', 'utf8')).sha256Compressed)")
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "gz_sha256=${GZ_SHA256}" >> $GITHUB_OUTPUT
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: "open-pl-address Database v${{ steps.vars.outputs.version }}"
+          draft: false
+          prerelease: false
+          files: |
+            data/pl_addresses.sqlite.gz
+            data/manifest.json
+          body: |
+            ### Automated Weekly Polish Address Database Update
+            
+            - **Version:** `${{ steps.vars.outputs.version }}`
+            - **Built:** `${{ steps.vars.outputs.version }}`
+            - **Data Sources:** GUS TERYT (TERC, SIMC, ULIC) + GUGiK PRG (Punkty Adresowe)
+            
+            #### Checksums:
+            - **pl_addresses.sqlite (Raw SHA256):** `${{ steps.vars.outputs.sha256 }}`
+            - **pl_addresses.sqlite.gz (Gzip SHA256):** `${{ steps.vars.outputs.gz_sha256 }}`
+            
+            #### Client SDKs:
+            The embedded client SDKs (TypeScript / C#) automatically sync and hot-swap this release when configured with:
+            ```json
+            { "updateUrl": "https://github.com/${{ github.repository }}/releases/latest/download" }
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

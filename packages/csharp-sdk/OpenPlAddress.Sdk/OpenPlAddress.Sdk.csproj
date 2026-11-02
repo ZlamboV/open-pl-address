@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PackageId>OpenPlAddress.Sdk</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>open-pl-address contributors</Authors>
+    <Description>Embedded Polish Address SDK (TERYT + PRG) for InsERT Gratyfikant nexo, ZUS Platnik, and .NET applications</Description>
+    <PackageTags>teryt;prg;poland;address;platnik;gratyfikant;nexo;sqlite</PackageTags>
+    <RepositoryUrl>https://github.com/open-pl-address/open-pl-address</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+bin/
+obj/
+
+# Build artifacts
+dist/
+build/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite.tmp
+!data/demo/*.sqlite
+*.sqlite.gz
+*.sqlite.zst
+
+# Logs & temp
+*.log
+npm-debug.log*
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Downloads cache
+.cache/
+temp/
+downloads/

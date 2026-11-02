@@ -1,0 +1,18 @@
+{
+  "name": "@open-pl-address/builder",
+  "version": "1.0.0",
+  "description": "Database builder and compiler for open-pl-address",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:seed": "node --experimental-strip-types src/index.ts --seed",
+    "build:full": "node --experimental-strip-types src/index.ts --full"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
