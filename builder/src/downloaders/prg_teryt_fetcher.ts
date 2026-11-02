@@ -13,9 +13,21 @@ export interface DownloadSource {
 export const OFFICIAL_DATA_SOURCES: Record<string, DownloadSource> = {
   GUGIK_PRG_ADRESY: {
     id: 'prg_adresy',
-    name: 'GUGiK Państwowy Rejestr Granic - Punkty Adresowe',
+    name: 'GUGiK Państwowy Rejestr Granic - Punkty Adresowe (Cała Polska)',
     url: 'https://opendata.geoportal.gov.pl/prg/adresy/PRG_PunktyAdresowe.zip',
     targetFilename: 'PRG_PunktyAdresowe.zip',
+  },
+  GUGIK_PRG_ADRESY_LUBLIN: {
+    id: 'prg_adresy_06',
+    name: 'GUGiK Państwowy Rejestr Granic - Województwo Lubelskie (TERYT 06)',
+    url: 'https://integracja.gugik.gov.pl/PRG/pobierz.php?teryt=06',
+    targetFilename: 'PRG_PunktyAdresowe_06.zip',
+  },
+  GUGIK_PRG_ADRESY_DIRECT_ALL: {
+    id: 'prg_adresy_00',
+    name: 'GUGiK Państwowy Rejestr Granic - Cała Polska (Direct pobierz.php teryt=00)',
+    url: 'https://integracja.gugik.gov.pl/PRG/pobierz.php?teryt=00',
+    targetFilename: 'PRG_PunktyAdresowe_00.zip',
   },
   GUS_TERYT_TERC: {
     id: 'teryt_terc',
@@ -34,6 +46,18 @@ export const OFFICIAL_DATA_SOURCES: Record<string, DownloadSource> = {
     name: 'GUS TERYT - ULIC (Ulice)',
     url: 'https://eteryt.stat.gov.pl/eTeryt/app/app/services/xml/ULIC.xml',
     targetFilename: 'ULIC.xml',
+  },
+  MF_TAX_OFFICES_CRD_XSD: {
+    id: 'mf_kody_urzedow',
+    name: 'Ministerstwo Finansów - Kody Urzędów Skarbowych (CRD XSD)',
+    url: 'https://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd',
+    targetFilename: 'KodyUrzedowSkarbowych_v8-0E.xsd',
+  },
+  DANE_GOV_PL_TAX_OFFICES_DATASETS: {
+    id: 'dane_gov_pl_us_territories',
+    name: 'dane.gov.pl - Zasięg terytorialny urzędów skarbowych (API)',
+    url: 'https://api.dane.gov.pl/1.4/datasets?q=zasi%C4%99g+terytorialny+urz%C4%99d%C3%B3w+skarbowych',
+    targetFilename: 'dane_gov_pl_us_datasets.json',
   },
 };
 
